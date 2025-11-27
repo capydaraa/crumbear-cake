@@ -1,0 +1,296 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Manage Cakes - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-2">Manage Cakes</h1>
+            <p class="text-muted">Add, edit, or remove cakes from the catalog</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <button class="btn btn-lg" style="background-color: #AC4037; color: white;" data-bs-toggle="modal" data-bs-target="#addCakeModal">
+                <i class="bi bi-plus-circle"></i> Add New Cake
+            </button>
+        </div>
+    </div>
+
+    <!-- Cakes List -->
+    <div class="card shadow-sm">
+        <div class="card-header" style="background-color: #EDCAD4;">
+            <h5 class="mb-0">All Cakes ({{ cakes|length }})</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Image</th>
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th>Views</th>
+                            <th>Price 4x3</th>
+                            <th>Price 5x3</th>
+                            <th>Price 6x3</th>
+                            <th>Featured</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cake in cakes %}
+                        <tr>
+                            <td>{{ cake.cake_id }}</td>
+                            <td>
+                                {% if cake.images and cake.images|length > 0 %}
+                                <img src="{{ cake.images[0].image_url }}" alt="{{ cake.name }}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">
+                                {% else %}
+                                <div style="width: 60px; height: 60px; background-color: #EDCAD4; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="bi bi-cake2" style="font-size: 24px; color: #AC4037;"></i>
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td><strong>{{ cake.name }}</strong></td>
+                            <td><span class="badge" style="background-color: #BF6865;">{{ cake.category }}</span></td>
+                            <td><strong>{{ cake.view_count }}</strong></td>
+                            <td>₱{{ "%.2f"|format(cake.base_price_4x3) }}</td>
+                            <td>₱{{ "%.2f"|format(cake.base_price_5x3) }}</td>
+                            <td>₱{{ "%.2f"|format(cake.base_price_6x3) }}</td>
+                            <td>
+                                {% if cake.is_featured %}
+                                <span class="badge bg-success">Yes</span>
+                                {% else %}
+                                <span class="badge bg-secondary">No</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" onclick="editCake({{ cake.cake_id }})">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteCake({{ cake.cake_id }}, '{{ cake.name }}')">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Cake Modal -->
+<div class="modal fade" id="addCakeModal" tabindex="-1" aria-labelledby="addCakeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #EDCAD4;">
+                <h5 class="modal-title" id="addCakeModalLabel">Add New Cake</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('admin_add_cake') }}" method="POST" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="cakeName" class="form-label">Cake Name *</label>
+                            <input type="text" class="form-control" id="cakeName" name="name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="cakeCategory" class="form-label">Category *</label>
+                            <select class="form-select" id="cakeCategory" name="category" required>
+                                <option value="">Select Category</option>
+                                <option value="Birthday">Birthday</option>
+                                <option value="Wedding">Wedding</option>
+                                <option value="Anniversaries">Anniversaries</option>
+                                <option value="Cartoons">Cartoons</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="cakeDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="cakeDescription" name="description" rows="3"></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="price4x3" class="form-label">Price 4x3 (₱) *</label>
+                            <input type="number" step="0.01" class="form-control" id="price4x3" name="base_price_4x3" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="price5x3" class="form-label">Price 5x3 (₱) *</label>
+                            <input type="number" step="0.01" class="form-control" id="price5x3" name="base_price_5x3" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="price6x3" class="form-label">Price 6x3 (₱) *</label>
+                            <input type="number" step="0.01" class="form-control" id="price6x3" name="base_price_6x3" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="cakeImages" class="form-label">Images (Multiple) *</label>
+                        <input type="file" class="form-control" id="cakeImages" name="images" multiple accept="image/*" required>
+                        <div class="form-text">You can select multiple images. The first image will be the primary image.</div>
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="isFeatured" name="is_featured" value="1">
+                        <label class="form-check-label" for="isFeatured">
+                            Mark as Featured
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn" style="background-color: #AC4037; color: white;">
+                        <i class="bi bi-plus-circle"></i> Add Cake
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Cake Modal -->
+<div class="modal fade" id="editCakeModal" tabindex="-1" aria-labelledby="editCakeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #EDCAD4;">
+                <h5 class="modal-title" id="editCakeModalLabel">Edit Cake</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editCakeForm" method="POST" enctype="multipart/form-data">
+                <input type="hidden" id="editCakeId" name="cake_id">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="editCakeName" class="form-label">Cake Name *</label>
+                            <input type="text" class="form-control" id="editCakeName" name="name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="editCakeCategory" class="form-label">Category *</label>
+                            <select class="form-select" id="editCakeCategory" name="category" required>
+                                <option value="Birthday">Birthday</option>
+                                <option value="Wedding">Wedding</option>
+                                <option value="Anniversaries">Anniversaries</option>
+                                <option value="Cartoons">Cartoons</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editCakeDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="editCakeDescription" name="description" rows="3"></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="editPrice4x3" class="form-label">Price 4x3 (₱) *</label>
+                            <input type="number" step="0.01" class="form-control" id="editPrice4x3" name="base_price_4x3" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="editPrice5x3" class="form-label">Price 5x3 (₱) *</label>
+                            <input type="number" step="0.01" class="form-control" id="editPrice5x3" name="base_price_5x3" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="editPrice6x3" class="form-label">Price 6x3 (₱) *</label>
+                            <input type="number" step="0.01" class="form-control" id="editPrice6x3" name="base_price_6x3" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Current Images</label>
+                        <div id="currentImages" class="d-flex flex-wrap gap-2"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editCakeImages" class="form-label">Add New Images (Optional)</label>
+                        <input type="file" class="form-control" id="editCakeImages" name="images" multiple accept="image/*">
+                        <div class="form-text">Upload new images to add to this cake.</div>
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="editIsFeatured" name="is_featured" value="1">
+                        <label class="form-check-label" for="editIsFeatured">
+                            Mark as Featured
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn" style="background-color: #AC4037; color: white;">
+                        <i class="bi bi-check-circle"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function editCake(cakeId) {
+    // Fetch cake data
+    fetch(`/api/cakes/${cakeId}`)
+        .then(response => response.json())
+        .then(cake => {
+            document.getElementById('editCakeId').value = cake.cake_id;
+            document.getElementById('editCakeName').value = cake.name;
+            document.getElementById('editCakeCategory').value = cake.category;
+            document.getElementById('editCakeDescription').value = cake.description || '';
+            document.getElementById('editPrice4x3').value = cake.base_price_4x3;
+            document.getElementById('editPrice5x3').value = cake.base_price_5x3;
+            document.getElementById('editPrice6x3').value = cake.base_price_6x3;
+            document.getElementById('editIsFeatured').checked = cake.is_featured;
+
+            // Display current images
+            const currentImagesDiv = document.getElementById('currentImages');
+            currentImagesDiv.innerHTML = '';
+            if (cake.images && cake.images.length > 0) {
+                cake.images.forEach((img, index) => {
+                    const imgDiv = document.createElement('div');
+                    imgDiv.className = 'position-relative';
+                    imgDiv.innerHTML = `
+                        <img src="${img.image_url}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;">
+                        ${img.is_primary ? '<span class="badge bg-success position-absolute top-0 start-0">Primary</span>' : ''}
+                    `;
+                    currentImagesDiv.appendChild(imgDiv);
+                });
+            }
+
+            // Set form action
+            document.getElementById('editCakeForm').action = `/admin/cakes/edit/${cakeId}`;
+
+            // Show modal
+            new bootstrap.Modal(document.getElementById('editCakeModal')).show();
+        })
+        .catch(error => {
+            console.error('Error fetching cake:', error);
+            alert('Error loading cake data');
+        });
+}
+
+function deleteCake(cakeId, cakeName) {
+    if (confirm(`Are you sure you want to delete "${cakeName}"? This action cannot be undone.`)) {
+        fetch(`/admin/cakes/delete/${cakeId}`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Cake deleted successfully!');
+                location.reload();
+            } else {
+                alert('Error deleting cake: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting cake:', error);
+            alert('Error deleting cake');
+        });
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,212 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Admin Dashboard - Crumbear{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="mb-3">Admin Dashboard</h1>
+            <p class="text-muted">Overview of Crumbear Cake Management System</p>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white" style="background-color: #AC4037;">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-white-50">Total Cakes</h6>
+                    <h2 class="card-title mb-0">{{ stats.total_cakes }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white" style="background-color: #BF6865;">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-white-50">Total Views</h6>
+                    <h2 class="card-title mb-0">{{ stats.total_views }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white" style="background-color: #D2847A;">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-white-50">Price Estimates</h6>
+                    <h2 class="card-title mb-0">{{ stats.total_estimates }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white" style="background-color: #E7BCC7;">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-white-50">Featured Cakes</h6>
+                    <h2 class="card-title mb-0">{{ stats.featured_cakes }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header" style="background-color: #EDCAD4;">
+                    <h5 class="mb-0">Most Viewed Cakes</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="topCakesChart" height="80"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-header" style="background-color: #EDCAD4;">
+                    <h5 class="mb-0">Cakes by Category</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Most Viewed Cakes Table -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header" style="background-color: #EDCAD4;">
+                    <h5 class="mb-0">Top 10 Most Viewed Cakes</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Cake Name</th>
+                                    <th>Category</th>
+                                    <th>Views</th>
+                                    <th>Base Price (5x3)</th>
+                                    <th>Featured</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cake in top_cakes %}
+                                <tr>
+                                    <td><strong>{{ loop.index }}</strong></td>
+                                    <td>{{ cake.name }}</td>
+                                    <td><span class="badge" style="background-color: #BF6865;">{{ cake.category }}</span></td>
+                                    <td><strong>{{ cake.view_count }}</strong></td>
+                                    <td>₱{{ "%.2f"|format(cake.base_price_5x3) }}</td>
+                                    <td>
+                                        {% if cake.is_featured %}
+                                        <span class="badge bg-success">Yes</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">No</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('admin_edit_cake', cake_id=cake.cake_id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header" style="background-color: #EDCAD4;">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <a href="{{ url_for('admin_cakes') }}" class="btn btn-lg me-2 mb-2" style="background-color: #AC4037; color: white;">
+                        <i class="bi bi-cake2"></i> Manage Cakes
+                    </a>
+                    <a href="{{ url_for('admin_toppings') }}" class="btn btn-lg me-2 mb-2" style="background-color: #BF6865; color: white;">
+                        <i class="bi bi-star"></i> Manage Toppings
+                    </a>
+                    <a href="{{ url_for('admin_flavors') }}" class="btn btn-lg me-2 mb-2" style="background-color: #D2847A; color: white;">
+                        <i class="bi bi-palette"></i> Manage Flavors
+                    </a>
+                    <a href="{{ url_for('admin_colors') }}" class="btn btn-lg mb-2" style="background-color: #E7BCC7; color: white;">
+                        <i class="bi bi-paint-bucket"></i> Manage Colors
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    // Most Viewed Cakes Chart
+    const topCakesCtx = document.getElementById('topCakesChart').getContext('2d');
+    new Chart(topCakesCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ chart_data.cake_names | tojson }},
+            datasets: [{
+                label: 'Views',
+                data: {{ chart_data.cake_views | tojson }},
+                backgroundColor: '#AC4037',
+                borderColor: '#AC4037',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+
+    // Category Distribution Chart
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    new Chart(categoryCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ chart_data.categories | tojson }},
+            datasets: [{
+                data: {{ chart_data.category_counts | tojson }},
+                backgroundColor: [
+                    '#AC4037',
+                    '#BF6865',
+                    '#D2847A',
+                    '#E7BCC7',
+                    '#EDCAD4'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

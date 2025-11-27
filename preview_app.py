@@ -110,14 +110,97 @@ def admin_login():
 
 @app.route('/admin/dashboard')
 def admin_dashboard():
-    """Admin dashboard (placeholder)"""
-    return "<h1>Admin Dashboard Coming Soon!</h1><a href='/'>Back to Home</a>"
+    """Admin dashboard with analytics"""
+    # Mock statistics
+    stats = {
+        'total_cakes': len(MOCK_CAKES),
+        'total_views': sum(cake['view_count'] for cake in MOCK_CAKES),
+        'total_estimates': 15,
+        'featured_cakes': sum(1 for cake in MOCK_CAKES if cake['is_featured'])
+    }
+    
+    # Top 10 cakes by views
+    top_cakes = sorted(MOCK_CAKES, key=lambda x: x['view_count'], reverse=True)[:10]
+    
+    # Chart data
+    chart_data = {
+        'cake_names': [cake['name'] for cake in top_cakes[:5]],
+        'cake_views': [cake['view_count'] for cake in top_cakes[:5]],
+        'categories': ['Birthday', 'Wedding', 'Anniversaries', 'Cartoons', 'Other'],
+        'category_counts': [
+            sum(1 for cake in MOCK_CAKES if cake['category'] == 'Birthday'),
+            sum(1 for cake in MOCK_CAKES if cake['category'] == 'Wedding'),
+            sum(1 for cake in MOCK_CAKES if cake['category'] == 'Anniversaries'),
+            sum(1 for cake in MOCK_CAKES if cake['category'] == 'Cartoons'),
+            sum(1 for cake in MOCK_CAKES if cake['category'] == 'Other'),
+        ]
+    }
+    
+    return render_template('admin_dashboard.html', stats=stats, top_cakes=top_cakes, chart_data=chart_data)
+
+@app.route('/admin/cakes')
+def admin_cakes():
+    """Admin cakes management page"""
+    # Add images array to each cake for the template
+    cakes_with_images = []
+    for cake in MOCK_CAKES:
+        cake_copy = cake.copy()
+        cake_copy['images'] = [{'image_url': cake['image_url'], 'is_primary': True}]
+        cakes_with_images.append(cake_copy)
+    return render_template('admin_cakes.html', cakes=cakes_with_images)
+
+@app.route('/admin/cakes/add', methods=['POST'])
+def admin_add_cake():
+    """Add new cake"""
+    # TODO: Implement actual file upload and database insertion
+    name = request.form.get('name')
+    print(f"Adding new cake: {name}")
+    return redirect(url_for('admin_cakes'))
+
+@app.route('/admin/cakes/edit/<int:cake_id>', methods=['POST'])
+def admin_edit_cake(cake_id):
+    """Edit existing cake"""
+    # TODO: Implement actual edit logic
+    print(f"Editing cake ID: {cake_id}")
+    return redirect(url_for('admin_cakes'))
+
+@app.route('/admin/cakes/delete/<int:cake_id>', methods=['POST'])
+def admin_delete_cake(cake_id):
+    """Delete cake"""
+    # TODO: Implement actual deletion
+    print(f"Deleting cake ID: {cake_id}")
+    return jsonify({'success': True})
+
+@app.route('/admin/toppings')
+def admin_toppings():
+    """Admin toppings management (placeholder)"""
+    return "<h1>Manage Toppings - Coming Soon!</h1><a href='/admin/dashboard'>Back to Dashboard</a>"
+
+@app.route('/admin/flavors')
+def admin_flavors():
+    """Admin flavors management (placeholder)"""
+    return "<h1>Manage Flavors - Coming Soon!</h1><a href='/admin/dashboard'>Back to Dashboard</a>"
+
+@app.route('/admin/colors')
+def admin_colors():
+    """Admin colors management (placeholder)"""
+    return "<h1>Manage Colors - Coming Soon!</h1><a href='/admin/dashboard'>Back to Dashboard</a>"
 
 # API endpoints (mock data for testing)
 @app.route('/api/cakes')
 def api_cakes():
     """Get all cakes"""
     return jsonify(MOCK_CAKES)
+
+@app.route('/api/cakes/<int:cake_id>')
+def api_cake_detail(cake_id):
+    """Get single cake by ID"""
+    cake = next((c for c in MOCK_CAKES if c['cake_id'] == cake_id), None)
+    if cake:
+        cake_with_images = cake.copy()
+        cake_with_images['images'] = [{'image_url': cake['image_url'], 'is_primary': True}]
+        return jsonify(cake_with_images)
+    return jsonify({'error': 'Cake not found'}), 404
 
 @app.route('/api/flavors')
 def api_flavors():
@@ -173,4 +256,4 @@ def api_save_estimate():
     return jsonify({'success': True, 'estimate_id': 1})
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5001)
