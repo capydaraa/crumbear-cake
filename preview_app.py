@@ -98,8 +98,14 @@ def calculator():
 def admin_login():
     """Admin login page"""
     if request.method == 'POST':
-        # Mock login - just redirect for now
-        return redirect(url_for('admin_dashboard'))
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        # Temporary hardcoded credentials (TODO: Move to database)
+        if username == 'admin' and password == 'crumbear123':
+            return redirect(url_for('admin_dashboard'))
+        else:
+            return render_template('admin_login.html', error='Invalid username or password')
     return render_template('admin_login.html')
 
 @app.route('/admin/dashboard')

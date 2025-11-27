@@ -9,6 +9,12 @@
             <div class="content-section">
                 <h2 class="text-center mb-4">Admin Login</h2>
                 
+                {% if error %}
+                <div class="alert alert-danger" role="alert">
+                    {{ error }}
+                </div>
+                {% endif %}
+                
                 <form method="POST" action="{{ url_for('admin_login') }}">
                     <div class="mb-3">
                         <label for="username" class="form-label">Username</label>
