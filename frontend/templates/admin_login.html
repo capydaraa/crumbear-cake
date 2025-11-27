@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Login - Crumbear{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center" style="margin-top: 5rem;">
+        <div class="col-md-5">
+            <div class="content-section">
+                <h2 class="text-center mb-4">Admin Login</h2>
+                
+                <form method="POST" action="{{ url_for('admin_login') }}">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100">Login</button>
+                </form>
+                
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('index') }}" class="text-muted">← Back to Browse</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

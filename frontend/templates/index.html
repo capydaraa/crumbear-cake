@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}Browse Cakes - Crumbear{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="page-title">Bento Cake Pricelist</h1>
+    
+    <!-- Category & Size Filters -->
+    <div class="filter-section">
+        <!-- Category Filter -->
+        <div class="filter-group">
+            <span class="filter-label">Category:</span>
+            <div class="category-filter">
+                <button class="category-btn active" data-category="all">All</button>
+                <button class="category-btn" data-category="Birthday">Birthday</button>
+                <button class="category-btn" data-category="Wedding">Wedding</button>
+                <button class="category-btn" data-category="Anniversaries">Anniversaries</button>
+                <button class="category-btn" data-category="Cartoons">Cartoons</button>
+            </div>
+        </div>
+        
+        <!-- Size Filter -->
+        <div class="filter-group">
+            <span class="filter-label">Size:</span>
+            <div class="size-filter">
+                <button class="size-btn" data-size="4x3">4x3</button>
+                <button class="size-btn active" data-size="5x3">5x3</button>
+                <button class="size-btn" data-size="6x3">6x3</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call to Action -->
+    <div class="content-section text-center mb-5">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h3>💭 Have a cake in mind?</h3>
+                <p class="mb-0">Calculate your custom cake price with our interactive price calculator! Choose size, layers, flavors, toppings, and more. 🍰✨</p>
+            </div>
+            <div class="col-md-4">
+                <a href="{{ url_for('calculator') }}" class="btn btn-primary btn-lg">
+                    Calculate Price →
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cakes Grid -->
+    <div class="row" id="cakesGrid">
+        {% if cakes %}
+            {% for cake in cakes %}
+            <div class="col-md-4 cake-item" data-category="{{ cake.category }}" 
+                 data-price-4x3="{{ cake.base_price_4x3 }}"
+                 data-price-5x3="{{ cake.base_price_5x3 }}"
+                 data-price-6x3="{{ cake.base_price_6x3 }}"
+                 data-cake-id="{{ cake.cake_id }}"
+                 data-cake-name="{{ cake.name }}"
+                 data-cake-description="{{ cake.description }}"
+                 data-view-count="{{ cake.view_count }}">
+                <div class="cake-card" style="cursor: pointer;">
+                    <img src="{{ cake.image_url or url_for('static', filename='images/placeholder-cake.jpg') }}" 
+                         alt="{{ cake.name }}" 
+                         loading="lazy">
+                    <div class="cake-card-body">
+                        <div class="price-display">₱{{ "%.2f"|format(cake.base_price_5x3) }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="content-section text-center">
+                    <h3>🚧 Under Crumbstruction!</h3>
+                    <p>No cakes available yet. Check back soon! 🧸🪄✨</p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Cake Detail Modal -->
+    <div class="modal fade" id="cakeDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 20px; border: 3px solid var(--soft-pink);">
+                <div class="modal-header" style="border-bottom: 2px solid #EDCAD4;">
+                    <h5 class="modal-title" id="cakeModalTitle" style="font-family: 'Fredoka', sans-serif; color: #AC4037;"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <img id="cakeModalImage" src="" alt="" style="width: 100%; border-radius: 15px; margin-bottom: 1rem;">
+                    <p id="cakeModalDescription" class="text-muted mb-3"></p>
+                    
+                    <div class="mb-3">
+                        <h6 style="font-family: 'Fredoka', sans-serif; color: #AC4037;">Prices:</h6>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>4x3:</span>
+                            <strong id="cakePrice4x3" style="color: #AC4037;"></strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>5x3:</span>
+                            <strong id="cakePrice5x3" style="color: #AC4037;"></strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>6x3:</span>
+                            <strong id="cakePrice6x3" style="color: #AC4037;"></strong>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <small class="text-muted">👁️ <span id="cakeViewCount"></span> views</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentSize = '5x3';
+
+// Category filter functionality
+document.querySelectorAll('.category-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        const category = this.getAttribute('data-category');
+        filterCakes(category, currentSize);
+    });
+});
+
+// Size filter functionality
+document.querySelectorAll('.size-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        currentSize = this.getAttribute('data-size');
+        updatePricesBySize(currentSize);
+    });
+});
+
+function filterCakes(category, size) {
+    const cakeItems = document.querySelectorAll('.cake-item');
+    
+    cakeItems.forEach(item => {
+        if (category === 'all' || item.getAttribute('data-category') === category) {
+            item.style.display = 'block';
+            setTimeout(() => item.style.opacity = '1', 10);
+        } else {
+            item.style.opacity = '0';
+            setTimeout(() => item.style.display = 'none', 300);
+        }
+    });
+}
+
+function updatePricesBySize(size) {
+    const cakeItems = document.querySelectorAll('.cake-item');
+    
+    cakeItems.forEach(item => {
+        const price = item.getAttribute(`data-price-${size}`);
+        const priceDisplay = item.querySelector('.price-display');
+        if (priceDisplay && price) {
+            priceDisplay.textContent = '₱' + parseFloat(price).toFixed(2);
+        }
+    });
+}
+
+// View cake details
+document.querySelectorAll('.cake-card').forEach(card => {
+    card.addEventListener('click', function() {
+        const item = this.closest('.cake-item');
+        const cakeId = item.getAttribute('data-cake-id');
+        const name = item.getAttribute('data-cake-name');
+        const description = item.getAttribute('data-cake-description');
+        const price4x3 = item.getAttribute('data-price-4x3');
+        const price5x3 = item.getAttribute('data-price-5x3');
+        const price6x3 = item.getAttribute('data-price-6x3');
+        const viewCount = item.getAttribute('data-view-count');
+        const imageUrl = item.querySelector('img').src;
+        
+        // Update modal content
+        document.getElementById('cakeModalTitle').textContent = name;
+        document.getElementById('cakeModalImage').src = imageUrl;
+        document.getElementById('cakeModalDescription').textContent = description;
+        document.getElementById('cakePrice4x3').textContent = '₱' + parseFloat(price4x3).toFixed(2);
+        document.getElementById('cakePrice5x3').textContent = '₱' + parseFloat(price5x3).toFixed(2);
+        document.getElementById('cakePrice6x3').textContent = '₱' + parseFloat(price6x3).toFixed(2);
+        document.getElementById('cakeViewCount').textContent = viewCount;
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('cakeDetailModal'));
+        modal.show();
+        
+        // Track view (future: send to API)
+        console.log('Viewing cake:', cakeId);
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block title %}Price Calculator - Crumbear{% endblock %}
+
+{% block content %}
+<div class="container calculator-container">
+    <h1 class="page-title">🍰 Custom Cake Price Calculator</h1>
+    
+    <div class="row">
+        <!-- Calculator Form -->
+        <div class="col-lg-8">
+            
+            <!-- Step 1: Select Base Cake (Optional) -->
+            <div class="calculator-section">
+                <h3>Step 1: Select Base Cake (Optional)</h3>
+                <p class="text-muted small">Start with one of our pre-designed cakes or create from scratch</p>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="baseCake" id="cakeCustom" value="custom" checked>
+                            <label class="form-check-label" for="cakeCustom">
+                                <strong>Create From Scratch</strong>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <select class="form-select" id="baseCakeSelect">
+                    <option value="">Choose a base cake design...</option>
+                    <!-- Will be populated dynamically from API -->
+                </select>
+            </div>
+            
+            <!-- Step 2: Choose Size -->
+            <div class="calculator-section">
+                <h3>Step 2: Choose Size</h3>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="size-option" data-size="4x3" data-price="300">
+                            <h5>4x3</h5>
+                            <p class="mb-0">Base: <strong>₱300</strong></p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="size-option" data-size="5x3" data-price="450">
+                            <h5>5x3</h5>
+                            <p class="mb-0">Base: <strong>₱450</strong></p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="size-option" data-size="6x3" data-price="600">
+                            <h5>6x3</h5>
+                            <p class="mb-0">Base: <strong>₱600</strong></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 3: Number of Layers -->
+            <div class="calculator-section">
+                <h3>Step 3: Number of Layers</h3>
+                <div class="row">
+                    <div class="col-md-2" id="layerButtons">
+                        <!-- Will be generated dynamically 1-5 -->
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <input type="range" class="form-range" id="layerSlider" min="1" max="5" value="1">
+                    <p class="text-center"><strong id="layerCount">1</strong> Layer(s)</p>
+                </div>
+            </div>
+            
+            <!-- Step 4: Choose Flavor -->
+            <div class="calculator-section">
+                <h3>Step 4: Choose Flavor</h3>
+                <select class="form-select" id="flavorSelect">
+                    <option value="">Select a flavor...</option>
+                    <!-- Will be populated from API -->
+                </select>
+                <p class="text-muted small mt-2">Each layer adds the flavor cost</p>
+            </div>
+            
+            <!-- Step 5: Add Toppings -->
+            <div class="calculator-section">
+                <h3>Step 5: Add Toppings</h3>
+                <div id="toppingsList">
+                    <!-- Will be populated from API -->
+                </div>
+            </div>
+            
+            <!-- Step 6: Choose Icing Colors -->
+            <div class="calculator-section">
+                <h3>Step 6: Choose Icing Colors</h3>
+                <p class="text-muted small">Select colors for 3 parts of your cake</p>
+                
+                <!-- Base Icing -->
+                <div class="mb-4">
+                    <label class="form-label">Base Icing</label>
+                    <select class="form-select icing-select" id="icingBase" data-part="Base">
+                        <option value="">Select color...</option>
+                    </select>
+                    <div class="shade-options mt-2" id="shadeBase" style="display: none;">
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="shadeBase" id="shadeBaseLight" value="light" data-multiplier="1.0">
+                            <label class="btn btn-outline-secondary" for="shadeBaseLight">Light (₱0)</label>
+                            
+                            <input type="radio" class="btn-check" name="shadeBase" id="shadeBaseMedium" value="medium" data-multiplier="1.5">
+                            <label class="btn btn-outline-secondary" for="shadeBaseMedium">Medium (+₱25)</label>
+                            
+                            <input type="radio" class="btn-check" name="shadeBase" id="shadeBaseDark" value="dark" data-multiplier="2.0">
+                            <label class="btn btn-outline-secondary" for="shadeBaseDark">Dark (+₱50)</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sides Icing -->
+                <div class="mb-4">
+                    <label class="form-label">Sides Icing</label>
+                    <select class="form-select icing-select" id="icingSides" data-part="Sides">
+                        <option value="">Select color...</option>
+                    </select>
+                    <div class="shade-options mt-2" id="shadeSides" style="display: none;">
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="shadeSides" id="shadeSidesLight" value="light" data-multiplier="1.0">
+                            <label class="btn btn-outline-secondary" for="shadeSidesLight">Light (₱0)</label>
+                            
+                            <input type="radio" class="btn-check" name="shadeSides" id="shadeSidesMedium" value="medium" data-multiplier="1.5">
+                            <label class="btn btn-outline-secondary" for="shadeSidesMedium">Medium (+₱25)</label>
+                            
+                            <input type="radio" class="btn-check" name="shadeSides" id="shadeSidesDark" value="dark" data-multiplier="2.0">
+                            <label class="btn btn-outline-secondary" for="shadeSidesDark">Dark (+₱50)</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Other (Cartoon Designs) Icing -->
+                <div class="mb-4">
+                    <label class="form-label">Other (Cartoon Designs)</label>
+                    <select class="form-select icing-select" id="icingOther" data-part="Other">
+                        <option value="">Select color...</option>
+                    </select>
+                    <div class="shade-options mt-2" id="shadeOther" style="display: none;">
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="shadeOther" id="shadeOtherLight" value="light" data-multiplier="1.0">
+                            <label class="btn btn-outline-secondary" for="shadeOtherLight">Light (₱0)</label>
+                            
+                            <input type="radio" class="btn-check" name="shadeOther" id="shadeOtherMedium" value="medium" data-multiplier="1.5">
+                            <label class="btn btn-outline-secondary" for="shadeOtherMedium">Medium (+₱25)</label>
+                            
+                            <input type="radio" class="btn-check" name="shadeOther" id="shadeOtherDark" value="dark" data-multiplier="2.0">
+                            <label class="btn btn-outline-secondary" for="shadeOtherDark">Dark (+₱50)</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 7: Additional Options -->
+            <div class="calculator-section">
+                <h3>Step 7: Additional Options</h3>
+                
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="hasMessage" value="50">
+                    <label class="form-check-label" for="hasMessage">
+                        Add Message on Cake <strong>(+₱50)</strong>
+                    </label>
+                </div>
+                
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="isRush" value="1.5">
+                    <label class="form-check-label" for="isRush">
+                        Rush Order <strong>(×1.5 multiplier)</strong>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Submit Button -->
+            <div class="text-center mb-4">
+                <button class="btn btn-primary btn-lg" id="saveEstimateBtn">
+                    💾 Save My Estimate
+                </button>
+            </div>
+            
+        </div>
+        
+        <!-- Price Summary Sidebar -->
+        <div class="col-lg-4">
+            <div class="price-summary">
+                <h3 class="text-center mb-4">Price Summary</h3>
+                <div class="text-center">
+                    <p class="mb-1">Total Price</p>
+                    <div class="total-price" id="totalPrice">₱0.00</div>
+                </div>
+                
+                <div class="price-breakdown">
+                    <div class="price-item">
+                        <span>Base Cake</span>
+                        <span id="priceBase">₱0.00</span>
+                    </div>
+                    <div class="price-item">
+                        <span>Layers × Flavor</span>
+                        <span id="priceLayers">₱0.00</span>
+                    </div>
+                    <div class="price-item">
+                        <span>Toppings</span>
+                        <span id="priceToppings">₱0.00</span>
+                    </div>
+                    <div class="price-item">
+                        <span>Icing Colors</span>
+                        <span id="priceIcing">₱0.00</span>
+                    </div>
+                    <div class="price-item">
+                        <span>Message</span>
+                        <span id="priceMessage">₱0.00</span>
+                    </div>
+                    <div class="price-item">
+                        <span>Rush Fee</span>
+                        <span id="priceRush">₱0.00</span>
+                    </div>
+                    <div class="price-item">
+                        <strong>Total</strong>
+                        <strong id="priceTotal">₱0.00</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/calculator.js') }}"></script>
+{% endblock %}

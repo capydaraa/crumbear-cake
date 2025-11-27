@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="80" viewBox="0 0 300 80">
+  <!-- Text with outline effect -->
+  <text x="150" y="50" font-family="Arial Black, sans-serif" font-size="40" font-weight="900" 
+        fill="#D2847A" stroke="#3E2723" stroke-width="3" text-anchor="middle" 
+        letter-spacing="2">CRUMBEAR</text>
+</svg>
