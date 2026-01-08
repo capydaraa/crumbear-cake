@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}{{ design.theme }} - Crumbear{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Back Button -->
+    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary mb-4">
+        ← Back to Gallery
+    </a>
+    
+    <div class="row">
+        <!-- Left: Image -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm" style="border-radius: 20px; overflow: hidden;">
+                <img src="{{ design.image_url or url_for('static', filename='images/placeholder-cake.jpg') }}" 
+                     alt="{{ design.theme }}" 
+                     class="w-100"
+                     style="height: 450px; object-fit: cover;">
+            </div>
+        </div>
+        
+        <!-- Right: Details -->
+        <div class="col-lg-6">
+            <h1 style="font-family: 'Fredoka', sans-serif; color: #AC4037;">{{ design.theme }}</h1>
+            
+            <!-- Rating -->
+            <div class="mb-3">
+                <span class="text-warning fs-4">
+                    {% for i in range(5) %}
+                        {% if i < design.avg_rating|int %}★{% else %}☆{% endif %}
+                    {% endfor %}
+                </span>
+                <span class="text-muted ms-2">({{ design.review_count }} reviews)</span>
+            </div>
+            
+            <!-- Price -->
+            <div class="mb-4 p-3" style="background-color: #EDCAD4; border-radius: 15px; display: inline-block;">
+                <span style="color: #AC4037; font-size: 2rem; font-weight: bold;">
+                    ₱{{ "%.2f"|format(design.calculated_price) }}
+                </span>
+            </div>
+            
+            <!-- Cake Details -->
+            <div class="card mb-4" style="border-radius: 15px; border: 2px solid #EDCAD4;">
+                <div class="card-body">
+                    <h5 style="color: #AC4037; font-family: 'Fredoka', sans-serif;">🎂 Cake Details</h5>
+                    <div class="row">
+                        <div class="col-6">
+                            <p class="mb-1"><strong>Base Cake:</strong></p>
+                            <p class="text-muted">{{ design.cake_name }}</p>
+                        </div>
+                        <div class="col-6">
+                            <p class="mb-1"><strong>Flavor:</strong></p>
+                            <p class="text-muted">{{ design.flavor }}</p>
+                        </div>
+                        <div class="col-6">
+                            <p class="mb-1"><strong>Frosting:</strong></p>
+                            <p class="text-muted">{{ design.frosting }}</p>
+                        </div>
+                        <div class="col-6">
+                            <p class="mb-1"><strong>Size:</strong></p>
+                            <p class="text-muted">{{ design.size }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Design Details -->
+            <div class="card mb-4" style="border-radius: 15px; border: 2px solid #EDCAD4;">
+                <div class="card-body">
+                    <h5 style="color: #AC4037; font-family: 'Fredoka', sans-serif;">🎨 Design Details</h5>
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        <span class="badge" style="background-color: #EDCAD4; color: #AC4037; font-size: 0.9rem;">
+                            🎨 {{ design.color_palette }}
+                        </span>
+                        <span class="badge 
+                            {% if design.complexity_level == 'Simple' %}bg-success
+                            {% elif design.complexity_level == 'Moderate' %}bg-info
+                            {% elif design.complexity_level == 'Complex' %}bg-warning text-dark
+                            {% else %}bg-danger{% endif %}" style="font-size: 0.9rem;">
+                            {{ design.complexity_level }}
+                        </span>
+                    </div>
+                    {% if design.topper_type %}
+                    <p class="mb-0"><strong>Topper:</strong> {{ design.topper_type }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Reviews Section -->
+    <div class="mt-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 style="font-family: 'Fredoka', sans-serif; color: #AC4037;">⭐ Customer Reviews</h3>
+            {% if logged_in_customer %}
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#reviewModal">
+                ✍️ Write a Review
+            </button>
+            {% else %}
+            <a href="{{ url_for('customer_login', next=request.path) }}" class="btn btn-outline-primary">
+                Sign in to Leave a Review
+            </a>
+            {% endif %}
+        </div>
+        
+        {% if reviews %}
+        <div class="row">
+            {% for review in reviews %}
+            <div class="col-md-6 mb-3">
+                <div class="card h-100" style="border-radius: 15px; border: 1px solid #EDCAD4;">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <strong>{{ review.customer_name }}</strong>
+                                <span class="text-muted small d-block">{{ review.city }}</span>
+                            </div>
+                            <span class="text-warning">
+                                {% for i in range(5) %}
+                                    {% if i < review.rating %}★{% else %}☆{% endif %}
+                                {% endfor %}
+                            </span>
+                        </div>
+                        <p class="mb-1">{{ review.review_text }}</p>
+                        <small class="text-muted">{{ review.review_date }}</small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5" style="background-color: #EDCAD4; border-radius: 15px;">
+            <p class="mb-0 text-muted">No reviews yet. Be the first to review this design!</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Review Modal (only shown if logged in) -->
+{% if logged_in_customer %}
+<div class="modal fade" id="reviewModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 20px;">
+            <div class="modal-header" style="border-bottom: 2px solid #EDCAD4;">
+                <h5 class="modal-title" style="font-family: 'Fredoka', sans-serif; color: #AC4037;">
+                    ✍️ Write a Review
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('submit_review', design_id=design.design_id) }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Your Rating</label>
+                        <div class="star-rating">
+                            {% for i in range(5, 0, -1) %}
+                            <input type="radio" name="rating" value="{{ i }}" id="star{{ i }}" {% if i == 5 %}checked{% endif %}>
+                            <label for="star{{ i }}">★</label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Your Review</label>
+                        <textarea class="form-control" name="review_text" rows="4" 
+                                  placeholder="Tell us about your experience..." required
+                                  style="border-radius: 10px;"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 2px solid #EDCAD4;">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit Review</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.star-rating {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    gap: 5px;
+}
+.star-rating input {
+    display: none;
+}
+.star-rating label {
+    font-size: 2rem;
+    color: #ddd;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.star-rating input:checked ~ label,
+.star-rating label:hover,
+.star-rating label:hover ~ label {
+    color: #ffc107;
+}
+</style>
+{% endif %}
+{% endblock %}

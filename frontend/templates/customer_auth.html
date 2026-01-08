@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In - Crumbear{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card shadow-sm" style="border-radius: 20px; border: 2px solid #EDCAD4;">
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <h2 style="font-family: 'Fredoka', sans-serif; color: #AC4037;">🧸 Welcome to Crumbear</h2>
+                        <p class="text-muted">Sign in to leave reviews and more!</p>
+                    </div>
+                    
+                    <!-- Tab Navigation -->
+                    <ul class="nav nav-pills nav-fill mb-4" id="authTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="login-tab" data-bs-toggle="pill" data-bs-target="#login" 
+                                    type="button" role="tab" style="border-radius: 20px;">Sign In</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="signup-tab" data-bs-toggle="pill" data-bs-target="#signup" 
+                                    type="button" role="tab" style="border-radius: 20px;">Sign Up</button>
+                        </li>
+                    </ul>
+                    
+                    {% if error %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert" style="border-radius: 10px;">
+                        {{ error }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endif %}
+                    
+                    {% if success %}
+                    <div class="alert alert-success alert-dismissible fade show" role="alert" style="border-radius: 10px;">
+                        {{ success }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="tab-content" id="authTabsContent">
+                        <!-- Login Form -->
+                        <div class="tab-pane fade show active" id="login" role="tabpanel">
+                            <form action="{{ url_for('customer_login') }}" method="POST">
+                                <input type="hidden" name="next" value="{{ next_url or '' }}">
+                                <div class="mb-3">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-control" name="email" required 
+                                           placeholder="your@email.com" style="border-radius: 10px;">
+                                </div>
+                                <div class="mb-4">
+                                    <label class="form-label">Password</label>
+                                    <input type="password" class="form-control" name="password" required
+                                           placeholder="Your password" style="border-radius: 10px;">
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100" style="border-radius: 20px;">
+                                    Sign In
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <!-- Signup Form -->
+                        <div class="tab-pane fade" id="signup" role="tabpanel">
+                            <form action="{{ url_for('customer_signup') }}" method="POST">
+                                <input type="hidden" name="next" value="{{ next_url or '' }}">
+                                <div class="mb-3">
+                                    <label class="form-label">Full Name</label>
+                                    <input type="text" class="form-control" name="full_name" required 
+                                           placeholder="Your full name" style="border-radius: 10px;">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-control" name="email" required 
+                                           placeholder="your@email.com" style="border-radius: 10px;">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">City</label>
+                                    <input type="text" class="form-control" name="city" required 
+                                           placeholder="Your city" style="border-radius: 10px;">
+                                </div>
+                                <div class="mb-4">
+                                    <label class="form-label">Password</label>
+                                    <input type="password" class="form-control" name="password" required
+                                           placeholder="Create a password" style="border-radius: 10px;">
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100" style="border-radius: 20px;">
+                                    Create Account
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <a href="{{ url_for('index') }}" class="text-muted">← Back to Gallery</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.nav-pills .nav-link {
+    color: #AC4037;
+}
+.nav-pills .nav-link.active {
+    background-color: #AC4037;
+    color: white;
+}
+</style>
+{% endblock %}

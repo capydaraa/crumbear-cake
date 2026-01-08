@@ -1,0 +1,269 @@
+{
+  "cakes": [
+    {
+      "cake_id": 1,
+      "cake_name": "Classic Vanilla Cake",
+      "flavor": "Vanilla",
+      "frosting": "Buttercream",
+      "size": "8 inch",
+      "base_price": 45.0,
+      "availability": true,
+      "created_at": "2025-12-01"
+    },
+    {
+      "cake_id": 2,
+      "cake_name": "Rich Chocolate Cake",
+      "flavor": "Chocolate",
+      "frosting": "Ganache",
+      "size": "8 inch",
+      "base_price": 50.0,
+      "availability": true,
+      "created_at": "2025-12-05"
+    },
+    {
+      "cake_id": 3,
+      "cake_name": "Red Velvet Delight",
+      "flavor": "Red Velvet",
+      "frosting": "Cream Cheese",
+      "size": "10 inch",
+      "base_price": 65.0,
+      "availability": true,
+      "created_at": "2025-12-10"
+    },
+    {
+      "cake_id": 4,
+      "cake_name": "Lemon Zest Cake",
+      "flavor": "Lemon",
+      "frosting": "Buttercream",
+      "size": "6 inch",
+      "base_price": 35.0,
+      "availability": true,
+      "created_at": "2025-12-12"
+    },
+    {
+      "cake_id": 5,
+      "cake_name": "Strawberry Dream",
+      "flavor": "Strawberry",
+      "frosting": "Whipped Cream",
+      "size": "8 inch",
+      "base_price": 48.0,
+      "availability": true,
+      "created_at": "2025-12-15"
+    }
+  ],
+  "designs": [
+    {
+      "design_id": 1,
+      "cake_id": 1,
+      "theme": "Birthday Party",
+      "color_palette": "Pink & White",
+      "topper_type": "Candles",
+      "complexity_level": "Simple",
+      "image_url": "https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=800&q=80",
+      "created_at": "2025-12-02"
+    },
+    {
+      "design_id": 2,
+      "cake_id": 1,
+      "theme": "Floral Garden",
+      "color_palette": "Pastel Rainbow",
+      "topper_type": "Fresh Flowers",
+      "complexity_level": "Moderate",
+      "image_url": "https://images.unsplash.com/photo-1535254973040-607b474cb50d?w=800&q=80",
+      "created_at": "2025-12-03"
+    },
+    {
+      "design_id": 3,
+      "cake_id": 2,
+      "theme": "Modern Minimalist",
+      "color_palette": "Black & White",
+      "topper_type": "Chocolate Decorations",
+      "complexity_level": "Moderate",
+      "image_url": "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=800&q=80",
+      "created_at": "2025-12-06"
+    },
+    {
+      "design_id": 4,
+      "cake_id": 2,
+      "theme": "Rustic Charm",
+      "color_palette": "Green & Brown",
+      "topper_type": "Berries",
+      "complexity_level": "Complex",
+      "image_url": "https://images.unsplash.com/photo-1621303837174-89787a7d4729?w=800&q=80",
+      "created_at": "2025-12-07"
+    },
+    {
+      "design_id": 5,
+      "cake_id": 3,
+      "theme": "Wedding Elegant",
+      "color_palette": "Gold & Ivory",
+      "topper_type": "Cake Topper Sign",
+      "complexity_level": "Expert",
+      "image_url": "https://images.unsplash.com/photo-1588195538326-c5b1e5b491e9?w=800&q=80",
+      "created_at": "2025-12-11"
+    },
+    {
+      "design_id": 6,
+      "cake_id": 4,
+      "theme": "Spring Fresh",
+      "color_palette": "Yellow & White",
+      "topper_type": "Fresh Flowers",
+      "complexity_level": "Simple",
+      "image_url": "https://images.unsplash.com/photo-1558636508-e0db3814bd1d?w=800&q=80",
+      "created_at": "2025-12-13"
+    },
+    {
+      "design_id": 7,
+      "cake_id": 5,
+      "theme": "Princess Fantasy",
+      "color_palette": "Pink & White",
+      "topper_type": "Fondant Figures",
+      "complexity_level": "Complex",
+      "image_url": "https://images.unsplash.com/photo-1562777717-dc6984f65a63?w=800&q=80",
+      "created_at": "2025-12-16"
+    },
+    {
+      "design_id": 8,
+      "cake_id": 5,
+      "theme": "Unicorn Magic",
+      "color_palette": "Pastel Rainbow",
+      "topper_type": "Custom Figurine",
+      "complexity_level": "Expert",
+      "image_url": "https://images.unsplash.com/photo-1557979619-445218f326b9?w=800&q=80",
+      "created_at": "2025-12-17"
+    },
+    {
+      "design_id": 9,
+      "cake_id": 5,
+      "theme": "Cat BFF Cake",
+      "color_palette": "Pink & White",
+      "topper_type": "Fresh Flowers",
+      "complexity_level": "Moderate",
+      "image_url": "/static/images/cakes/design_9_att.LHPncP2CEn2IL8ljZCCdgAmr61eggVe1fG3N7klvGU4.JPG",
+      "created_at": "2026-01-04"
+    }
+  ],
+  "customers": [
+    {
+      "customer_id": 1,
+      "full_name": "Emma Johnson",
+      "email": "emma.johnson@email.com",
+      "city": "New York",
+      "created_at": "2025-11-01"
+    },
+    {
+      "customer_id": 2,
+      "full_name": "Liam Smith",
+      "email": "liam.smith@email.com",
+      "city": "Los Angeles",
+      "created_at": "2025-11-05"
+    },
+    {
+      "customer_id": 3,
+      "full_name": "Olivia Brown",
+      "email": "olivia.brown@email.com",
+      "city": "Chicago",
+      "created_at": "2025-11-10"
+    },
+    {
+      "customer_id": 4,
+      "full_name": "Noah Davis",
+      "email": "noah.davis@email.com",
+      "city": "Houston",
+      "created_at": "2025-11-15"
+    },
+    {
+      "customer_id": 5,
+      "full_name": "Ava Wilson",
+      "email": "ava.wilson@email.com",
+      "city": "Phoenix",
+      "created_at": "2025-11-20"
+    },
+    {
+      "customer_id": 6,
+      "full_name": "Sophia Garcia",
+      "email": "sophia.garcia@email.com",
+      "city": "Miami",
+      "created_at": "2025-11-25"
+    },
+    {
+      "customer_id": 7,
+      "full_name": "bubbles",
+      "email": "bubbles@yahoo.com",
+      "city": "Zamboanga City",
+      "created_at": "2026-01-04"
+    },
+    {
+      "customer_id": 8,
+      "full_name": "bubbless",
+      "email": "bubbless@yahoo.com",
+      "city": "Zamboanga City",
+      "created_at": "2026-01-04"
+    },
+    {
+      "customer_id": 9,
+      "full_name": "realbubbles",
+      "email": "bubblesss@yahoo.com",
+      "city": "Zamboanga City",
+      "created_at": "2026-01-04"
+    }
+  ],
+  "reviews": [
+    {
+      "review_id": 2,
+      "customer_id": 2,
+      "design_id": 3,
+      "rating": 4,
+      "review_text": "Beautiful design, great chocolate flavor.",
+      "review_date": "2025-12-08"
+    },
+    {
+      "review_id": 3,
+      "customer_id": 3,
+      "design_id": 5,
+      "rating": 5,
+      "review_text": "The wedding cake was stunning!",
+      "review_date": "2025-12-12"
+    },
+    {
+      "review_id": 4,
+      "customer_id": 4,
+      "design_id": 2,
+      "rating": 4,
+      "review_text": "Lovely floral design, tasted amazing.",
+      "review_date": "2025-12-14"
+    },
+    {
+      "review_id": 5,
+      "customer_id": 5,
+      "design_id": 7,
+      "rating": 5,
+      "review_text": "My daughter loved the princess cake!",
+      "review_date": "2025-12-18"
+    },
+    {
+      "review_id": 6,
+      "customer_id": 6,
+      "design_id": 4,
+      "rating": 3,
+      "review_text": "Good cake but delivery was late.",
+      "review_date": "2025-12-20"
+    },
+    {
+      "review_id": 7,
+      "customer_id": 1,
+      "design_id": 8,
+      "rating": 5,
+      "review_text": "The unicorn design was magical!",
+      "review_date": "2025-12-22"
+    },
+    {
+      "review_id": 8,
+      "customer_id": 2,
+      "design_id": 6,
+      "rating": 4,
+      "review_text": "Fresh and delicious lemon cake.",
+      "review_date": "2025-12-24"
+    }
+  ]
+}

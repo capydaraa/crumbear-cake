@@ -1,0 +1,314 @@
+{% extends "base.html" %}
+
+{% block title %}Browse Cakes - Crumbear{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="page-title">Bento Cake Pricelist</h1>
+    
+    <!-- Search Bar -->
+    <div class="search-section mb-4">
+        <div class="input-group">
+            <span class="input-group-text" style="background-color: var(--soft-pink); border-color: var(--primary-pink);">
+                <i class="bi bi-search"></i> 🔍
+            </span>
+            <input type="text" class="form-control" id="searchInput" 
+                   placeholder="Search by cake name or category..." 
+                   style="border-color: var(--primary-pink);">
+            <button class="btn" type="button" id="clearSearch" 
+                    style="background-color: var(--primary-pink); color: white; border-color: var(--primary-pink);">
+                Clear
+            </button>
+        </div>
+    </div>
+    
+    <!-- Category & Size Filters -->
+    <div class="filter-section">
+        <!-- Category Filter -->
+        <div class="filter-group">
+            <span class="filter-label">Category:</span>
+            <div class="category-filter">
+                <button class="category-btn active" data-category="all">All</button>
+                <button class="category-btn" data-category="Birthday">Birthday</button>
+                <button class="category-btn" data-category="Wedding">Wedding</button>
+                <button class="category-btn" data-category="Anniversaries">Anniversaries</button>
+                <button class="category-btn" data-category="Cartoons">Cartoons</button>
+            </div>
+        </div>
+        
+        <!-- Size Filter -->
+        <div class="filter-group">
+            <span class="filter-label">Size:</span>
+            <div class="size-filter">
+                <button class="size-btn" data-size="4x3">4x3</button>
+                <button class="size-btn active" data-size="5x3">5x3</button>
+                <button class="size-btn" data-size="6x3">6x3</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call to Action -->
+    <div class="content-section text-center mb-5">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h3>💭 Have a cake in mind?</h3>
+                <p class="mb-0">Calculate your custom cake price with our interactive price calculator! Choose size, layers, flavors, toppings, and more. 🍰✨</p>
+            </div>
+            <div class="col-md-4">
+                <a href="{{ url_for('calculator') }}" class="btn btn-primary btn-lg">
+                    Calculate Price →
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cakes Grid -->
+    <div class="row" id="cakesGrid">
+        {% if cakes %}
+            {% for cake in cakes %}
+            <div class="col-md-4 cake-item" data-category="{{ cake.category }}" 
+                 data-price-4x3="{{ cake.base_price_4x3 }}"
+                 data-price-5x3="{{ cake.base_price_5x3 }}"
+                 data-price-6x3="{{ cake.base_price_6x3 }}"
+                 data-cake-id="{{ cake.cake_id }}"
+                 data-cake-name="{{ cake.name }}"
+                 data-cake-description="{{ cake.description }}"
+                 data-view-count="{{ cake.view_count }}">
+                <div class="cake-card" style="cursor: pointer;">
+                    <img src="{{ cake.image_url or url_for('static', filename='images/placeholder-cake.jpg') }}" 
+                         alt="{{ cake.name }}" 
+                         loading="lazy">
+                    <div class="cake-card-body">
+                        <div class="price-display">₱{{ "%.2f"|format(cake.base_price_5x3) }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="content-section text-center">
+                    <h3>🚧 Under Crumbstruction!</h3>
+                    <p>No cakes available yet. Check back soon! 🧸🪄✨</p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Cake Detail Modal -->
+    <div class="modal fade" id="cakeDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 20px; border: 3px solid var(--soft-pink);">
+                <div class="modal-header" style="border-bottom: 2px solid #EDCAD4;">
+                    <h5 class="modal-title" id="cakeModalTitle" style="font-family: 'Fredoka', sans-serif; color: #AC4037;"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="padding: 15px;">
+                    <div class="row">
+                        <!-- Left side: Image slideshow -->
+                        <div class="col-md-6" style="padding: 15px;">
+                            <div id="cakeCarousel" class="carousel slide" data-bs-ride="carousel">
+                                <div class="carousel-inner" id="cakeCarouselInner">
+                                    <div class="carousel-item active">
+                                        <img id="cakeModalImage" src="" alt="" class="d-block w-100" style="border-radius: 15px; height: 350px; object-fit: cover;">
+                                    </div>
+                                </div>
+                                <button class="carousel-control-prev" type="button" data-bs-target="#cakeCarousel" data-bs-slide="prev" style="width: 10%;">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true" style="background-color: rgba(172, 64, 55, 0.8); border-radius: 50%; padding: 10px;"></span>
+                                    <span class="visually-hidden">Previous</span>
+                                </button>
+                                <button class="carousel-control-next" type="button" data-bs-target="#cakeCarousel" data-bs-slide="next" style="width: 10%;">
+                                    <span class="carousel-control-next-icon" aria-hidden="true" style="background-color: rgba(172, 64, 55, 0.8); border-radius: 50%; padding: 10px;"></span>
+                                    <span class="visually-hidden">Next</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Right side: Cake information -->
+                        <div class="col-md-6" style="padding: 15px;">
+                            <p id="cakeModalDescription" class="text-muted mb-4"></p>
+                            
+                            <div class="mb-4">
+                                <h6 style="font-family: 'Fredoka', sans-serif; color: #AC4037; margin-bottom: 15px;">Prices:</h6>
+                                <div class="d-flex justify-content-between mb-3 p-2" style="background-color: #EDCAD4; border-radius: 8px;">
+                                    <span style="font-weight: 500;">4x3 inches:</span>
+                                    <strong id="cakePrice4x3" style="color: #AC4037;"></strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-3 p-2" style="background-color: #EDCAD4; border-radius: 8px;">
+                                    <span style="font-weight: 500;">5x3 inches:</span>
+                                    <strong id="cakePrice5x3" style="color: #AC4037;"></strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-3 p-2" style="background-color: #EDCAD4; border-radius: 8px;">
+                                    <span style="font-weight: 500;">6x3 inches:</span>
+                                    <strong id="cakePrice6x3" style="color: #AC4037;"></strong>
+                                </div>
+                            </div>
+                            
+                            <div class="text-center mt-4">
+                                <small class="text-muted" style="font-size: 0.9rem;">👁️ <span id="cakeViewCount"></span> views</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentSize = '5x3';
+
+// Category filter functionality
+document.querySelectorAll('.category-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        const category = this.getAttribute('data-category');
+        filterCakes(category, currentSize);
+    });
+});
+
+// Size filter functionality
+document.querySelectorAll('.size-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        currentSize = this.getAttribute('data-size');
+        updatePricesBySize(currentSize);
+    });
+});
+
+function filterCakes(category, size) {
+    const cakeItems = document.querySelectorAll('.cake-item');
+    
+    cakeItems.forEach(item => {
+        if (category === 'all' || item.getAttribute('data-category') === category) {
+            item.style.display = 'block';
+            setTimeout(() => item.style.opacity = '1', 10);
+        } else {
+            item.style.opacity = '0';
+            setTimeout(() => item.style.display = 'none', 300);
+        }
+    });
+}
+
+function updatePricesBySize(size) {
+    const cakeItems = document.querySelectorAll('.cake-item');
+    
+    cakeItems.forEach(item => {
+        const price = item.getAttribute(`data-price-${size}`);
+        const priceDisplay = item.querySelector('.price-display');
+        if (priceDisplay && price) {
+            priceDisplay.textContent = '₱' + parseFloat(price).toFixed(2);
+        }
+    });
+}
+
+// View cake details
+document.querySelectorAll('.cake-card').forEach(card => {
+    card.addEventListener('click', function() {
+        const item = this.closest('.cake-item');
+        const cakeId = item.getAttribute('data-cake-id');
+        const name = item.getAttribute('data-cake-name');
+        const description = item.getAttribute('data-cake-description');
+        const price4x3 = item.getAttribute('data-price-4x3');
+        const price5x3 = item.getAttribute('data-price-5x3');
+        const price6x3 = item.getAttribute('data-price-6x3');
+        const viewCount = item.getAttribute('data-view-count');
+        
+        // Increment view count
+        fetch(`/api/cakes/${cakeId}/view`, {
+            method: 'POST'
+        }).catch(error => console.error('Error tracking view:', error));
+        
+        // Fetch full cake details including all images
+        fetch(`/api/cakes/${cakeId}`)
+            .then(response => response.json())
+            .then(cakeData => {
+                // Update modal content
+                document.getElementById('cakeModalTitle').textContent = cakeData.name;
+                document.getElementById('cakeModalDescription').textContent = cakeData.description || 'No description available';
+                document.getElementById('cakePrice4x3').textContent = '₱' + parseFloat(cakeData.base_price_4x3).toFixed(2);
+                document.getElementById('cakePrice5x3').textContent = '₱' + parseFloat(cakeData.base_price_5x3).toFixed(2);
+                document.getElementById('cakePrice6x3').textContent = '₱' + parseFloat(cakeData.base_price_6x3).toFixed(2);
+                document.getElementById('cakeViewCount').textContent = cakeData.view_count;
+                
+                // Build carousel with all images
+                const carouselInner = document.getElementById('cakeCarouselInner');
+                carouselInner.innerHTML = '';
+                
+                if (cakeData.images && cakeData.images.length > 0) {
+                    cakeData.images.forEach((img, index) => {
+                        const carouselItem = document.createElement('div');
+                        carouselItem.className = 'carousel-item' + (index === 0 ? ' active' : '');
+                        carouselItem.innerHTML = `
+                            <img src="${img.image_url}" alt="${cakeData.name}" class="d-block w-100" 
+                                 style="border-radius: 15px; height: 350px; object-fit: cover;">
+                        `;
+                        carouselInner.appendChild(carouselItem);
+                    });
+                } else {
+                    // Fallback to placeholder if no images
+                    carouselInner.innerHTML = `
+                        <div class="carousel-item active">
+                            <img src="/static/images/placeholder-cake.jpg" alt="No image" class="d-block w-100" 
+                                 style="border-radius: 15px; height: 350px; object-fit: cover;">
+                        </div>
+                    `;
+                }
+                
+                // Show/hide carousel controls based on number of images
+                const prevBtn = document.querySelector('.carousel-control-prev');
+                const nextBtn = document.querySelector('.carousel-control-next');
+                if (cakeData.images && cakeData.images.length > 1) {
+                    prevBtn.style.display = 'flex';
+                    nextBtn.style.display = 'flex';
+                } else {
+                    prevBtn.style.display = 'none';
+                    nextBtn.style.display = 'none';
+                }
+                
+                // Show modal
+                const modal = new bootstrap.Modal(document.getElementById('cakeDetailModal'));
+                modal.show();
+            })
+            .catch(error => {
+                console.error('Error loading cake details:', error);
+                alert('Error loading cake details');
+            });
+        
+        // Track view
+        console.log('Viewing cake:', cakeId);
+    });
+});
+
+// Search functionality
+const searchInput = document.getElementById('searchInput');
+const clearSearchBtn = document.getElementById('clearSearch');
+
+searchInput.addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase().trim();
+    const cakeItems = document.querySelectorAll('.cake-item');
+    
+    cakeItems.forEach(item => {
+        const cakeName = item.dataset.cakeName.toLowerCase();
+        const cakeCategory = item.dataset.category.toLowerCase();
+        
+        if (searchTerm === '' || cakeName.includes(searchTerm) || cakeCategory.includes(searchTerm)) {
+            item.style.display = '';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+});
+
+clearSearchBtn.addEventListener('click', function() {
+    searchInput.value = '';
+    const cakeItems = document.querySelectorAll('.cake-item');
+    cakeItems.forEach(item => item.style.display = '');
+});
+</script>
+{% endblock %}

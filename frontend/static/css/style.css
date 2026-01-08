@@ -36,13 +36,15 @@ body {
 main {
     flex: 1;
     padding-top: 2rem;
-    margin-left: 50px;
-    margin-right: 50px;
+    margin-left: 150px;
+    margin-right: 150px;
 }
 
 .site-header {
-    position: relative;
-    background-color: var(--primary-pink);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background-color: transparent;
 }
 
 /* ========================================
@@ -51,9 +53,10 @@ main {
 .scalloped-border {
     height: 150px;
     background: url('../images/header.png') center center;
-    background-size: 100% 100%;
+    background-size: calc(100% + 10px) 100%;
     position: relative;
-    width: 100%;
+    width: calc(100% + 10px);
+    margin-left: -5px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -132,17 +135,17 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .cake-card {
-    background: white;
+    background: transparent;
     border-radius: 20px;
     overflow: hidden;
     transition: transform 0.3s, box-shadow 0.3s;
-    border: 2px solid #C16A81;
+    border: none;
     margin-bottom: 1.5rem;
 }
 
 .cake-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+    box-shadow: none;
 }
 
 .cake-card img {

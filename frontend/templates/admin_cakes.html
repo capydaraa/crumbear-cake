@@ -6,8 +6,8 @@
 <div class="container-fluid py-4">
     <div class="row mb-4">
         <div class="col-md-8">
-            <h1 class="mb-2">Manage Cakes</h1>
-            <p class="text-muted">Add, edit, or remove cakes from the catalog</p>
+            <h1 class="mb-2"><i class="bi bi-cake2"></i> Manage Cakes</h1>
+            <p class="text-muted">Add, edit, or remove base cakes from the catalog</p>
         </div>
         <div class="col-md-4 text-end">
             <button class="btn btn-lg" style="background-color: #AC4037; color: white;" data-bs-toggle="modal" data-bs-target="#addCakeModal">
@@ -16,60 +16,90 @@
         </div>
     </div>
 
-    <!-- Cakes List -->
+    <!-- Search and Filter Section -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" id="searchInput" placeholder="Search cakes...">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="flavorFilter">
+                        <option value="">All Flavors</option>
+                        <option value="Vanilla">Vanilla</option>
+                        <option value="Chocolate">Chocolate</option>
+                        <option value="Red Velvet">Red Velvet</option>
+                        <option value="Strawberry">Strawberry</option>
+                        <option value="Ube">Ube</option>
+                        <option value="Matcha">Matcha</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="availabilityFilter">
+                        <option value="">All Status</option>
+                        <option value="1">Available</option>
+                        <option value="0">Not Available</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="sortOrder">
+                        <option value="id">Sort by ID</option>
+                        <option value="name">Sort by Name</option>
+                        <option value="price-asc">Price: Low-High</option>
+                        <option value="price-desc">Price: High-Low</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cakes Table -->
     <div class="card shadow-sm">
-        <div class="card-header" style="background-color: #EDCAD4;">
-            <h5 class="mb-0">All Cakes ({{ cakes|length }})</h5>
+        <div class="card-header" style="background-color: #AC4037;">
+            <h5 class="mb-0 text-white">All Cakes (<span id="cakeCount">{{ cakes|length }}</span>)</h5>
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-hover">
+                <table class="table table-hover" id="cakesTable">
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Image</th>
-                            <th>Name</th>
-                            <th>Category</th>
-                            <th>Views</th>
-                            <th>Price 4x3</th>
-                            <th>Price 5x3</th>
-                            <th>Price 6x3</th>
-                            <th>Featured</th>
+                            <th>Cake Name</th>
+                            <th>Flavor</th>
+                            <th>Frosting</th>
+                            <th>Size</th>
+                            <th>Base Price</th>
+                            <th>Designs</th>
+                            <th>Available</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="cakesTableBody">
                         {% for cake in cakes %}
-                        <tr>
+                        <tr data-name="{{ cake.cake_name|lower }}" data-flavor="{{ cake.flavor }}" data-availability="{{ 1 if cake.availability else 0 }}" data-price="{{ cake.base_price }}">
                             <td>{{ cake.cake_id }}</td>
+                            <td><strong>{{ cake.cake_name }}</strong></td>
+                            <td><span class="badge" style="background-color: #BF6865;">{{ cake.flavor }}</span></td>
+                            <td>{{ cake.frosting }}</td>
+                            <td>{{ cake.size }}</td>
+                            <td>₱{{ "%.2f"|format(cake.base_price) }}</td>
+                            <td><span class="badge bg-info">{{ cake.design_count }} designs</span></td>
                             <td>
-                                {% if cake.images and cake.images|length > 0 %}
-                                <img src="{{ cake.images[0].image_url }}" alt="{{ cake.name }}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">
-                                {% else %}
-                                <div style="width: 60px; height: 60px; background-color: #EDCAD4; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                                    <i class="bi bi-cake2" style="font-size: 24px; color: #AC4037;"></i>
-                                </div>
-                                {% endif %}
-                            </td>
-                            <td><strong>{{ cake.name }}</strong></td>
-                            <td><span class="badge" style="background-color: #BF6865;">{{ cake.category }}</span></td>
-                            <td><strong>{{ cake.view_count }}</strong></td>
-                            <td>₱{{ "%.2f"|format(cake.base_price_4x3) }}</td>
-                            <td>₱{{ "%.2f"|format(cake.base_price_5x3) }}</td>
-                            <td>₱{{ "%.2f"|format(cake.base_price_6x3) }}</td>
-                            <td>
-                                {% if cake.is_featured %}
+                                {% if cake.availability %}
                                 <span class="badge bg-success">Yes</span>
                                 {% else %}
                                 <span class="badge bg-secondary">No</span>
                                 {% endif %}
                             </td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary" onclick="editCake({{ cake.cake_id }})">
-                                    <i class="bi bi-pencil"></i> Edit
+                            <td class="text-nowrap">
+                                <button class="btn btn-sm text-primary p-1" style="border: none; background: none;" onclick="editCake({{ cake.cake_id }})" title="Edit">
+                                    <i class="bi bi-pencil"></i>
                                 </button>
-                                <button class="btn btn-sm btn-outline-danger" onclick="deleteCake({{ cake.cake_id }}, '{{ cake.name }}')">
-                                    <i class="bi bi-trash"></i> Delete
+                                <button class="btn btn-sm text-danger p-1" style="border: none; background: none;" onclick="confirmDelete({{ cake.cake_id }}, '{{ cake.cake_name }}')" title="Delete">
+                                    <i class="bi bi-trash"></i>
                                 </button>
                             </td>
                         </tr>
@@ -82,71 +112,74 @@
 </div>
 
 <!-- Add Cake Modal -->
-<div class="modal fade" id="addCakeModal" tabindex="-1" aria-labelledby="addCakeModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+<div class="modal fade" id="addCakeModal" tabindex="-1">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header" style="background-color: #EDCAD4;">
-                <h5 class="modal-title" id="addCakeModalLabel">Add New Cake</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Add New Cake</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form action="{{ url_for('admin_add_cake') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ url_for('admin_add_cake') }}" method="POST" onsubmit="return validateForm(this)">
                 <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Cake Name *</label>
+                        <input type="text" class="form-control" name="cake_name" required minlength="2" maxlength="100">
+                    </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="cakeName" class="form-label">Cake Name *</label>
-                            <input type="text" class="form-control" id="cakeName" name="name" required>
+                            <label class="form-label">Flavor *</label>
+                            <select class="form-select" name="flavor" required>
+                                <option value="">Select flavor...</option>
+                                <option value="Vanilla">Vanilla</option>
+                                <option value="Chocolate">Chocolate</option>
+                                <option value="Red Velvet">Red Velvet</option>
+                                <option value="Strawberry">Strawberry</option>
+                                <option value="Lemon">Lemon</option>
+                                <option value="Carrot">Carrot</option>
+                                <option value="Coconut">Coconut</option>
+                                <option value="Coffee">Coffee</option>
+                            </select>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="cakeCategory" class="form-label">Category *</label>
-                            <select class="form-select" id="cakeCategory" name="category" required>
-                                <option value="">Select Category</option>
-                                <option value="Birthday">Birthday</option>
-                                <option value="Wedding">Wedding</option>
-                                <option value="Anniversaries">Anniversaries</option>
-                                <option value="Cartoons">Cartoons</option>
-                                <option value="Other">Other</option>
+                            <label class="form-label">Frosting *</label>
+                            <select class="form-select" name="frosting" required>
+                                <option value="">Select frosting...</option>
+                                <option value="Buttercream">Buttercream</option>
+                                <option value="Cream Cheese">Cream Cheese</option>
+                                <option value="Whipped Cream">Whipped Cream</option>
+                                <option value="Ganache">Ganache</option>
+                                <option value="Fondant">Fondant</option>
                             </select>
                         </div>
                     </div>
-
-                    <div class="mb-3">
-                        <label for="cakeDescription" class="form-label">Description</label>
-                        <textarea class="form-control" id="cakeDescription" name="description" rows="3"></textarea>
-                    </div>
-
                     <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label for="price4x3" class="form-label">Price 4x3 (₱) *</label>
-                            <input type="number" step="0.01" class="form-control" id="price4x3" name="base_price_4x3" required>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Size *</label>
+                            <select class="form-select" name="size" required>
+                                <option value="">Select size...</option>
+                                <option value="6 inch">6 inch</option>
+                                <option value="8 inch">8 inch</option>
+                                <option value="10 inch">10 inch</option>
+                                <option value="12 inch">12 inch</option>
+                                <option value="Cupcake">Cupcake</option>
+                            </select>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="price5x3" class="form-label">Price 5x3 (₱) *</label>
-                            <input type="number" step="0.01" class="form-control" id="price5x3" name="base_price_5x3" required>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="price6x3" class="form-label">Price 6x3 (₱) *</label>
-                            <input type="number" step="0.01" class="form-control" id="price6x3" name="base_price_6x3" required>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Base Price *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" name="base_price" step="0.01" min="1" max="500" required>
+                            </div>
                         </div>
                     </div>
-
-                    <div class="mb-3">
-                        <label for="cakeImages" class="form-label">Images (Multiple) *</label>
-                        <input type="file" class="form-control" id="cakeImages" name="images" multiple accept="image/*" required>
-                        <div class="form-text">You can select multiple images. The first image will be the primary image.</div>
-                    </div>
-
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="isFeatured" name="is_featured" value="1">
-                        <label class="form-check-label" for="isFeatured">
-                            Mark as Featured
-                        </label>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="availability" value="1" id="addAvailability" checked>
+                        <label class="form-check-label" for="addAvailability">Available for orders</label>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn" style="background-color: #AC4037; color: white;">
-                        <i class="bi bi-plus-circle"></i> Add Cake
-                    </button>
+                    <button type="submit" class="btn" style="background-color: #AC4037; color: white;">Add Cake</button>
                 </div>
             </form>
         </div>
@@ -154,143 +187,207 @@
 </div>
 
 <!-- Edit Cake Modal -->
-<div class="modal fade" id="editCakeModal" tabindex="-1" aria-labelledby="editCakeModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+<div class="modal fade" id="editCakeModal" tabindex="-1">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header" style="background-color: #EDCAD4;">
-                <h5 class="modal-title" id="editCakeModalLabel">Edit Cake</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title"><i class="bi bi-pencil"></i> Edit Cake</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form id="editCakeForm" method="POST" enctype="multipart/form-data">
-                <input type="hidden" id="editCakeId" name="cake_id">
+            <form id="editCakeForm" method="POST" onsubmit="return validateForm(this)">
                 <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Cake Name *</label>
+                        <input type="text" class="form-control" name="cake_name" id="editCakeName" required>
+                    </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="editCakeName" class="form-label">Cake Name *</label>
-                            <input type="text" class="form-control" id="editCakeName" name="name" required>
+                            <label class="form-label">Flavor *</label>
+                            <select class="form-select" name="flavor" id="editFlavor" required>
+                                <option value="Vanilla">Vanilla</option>
+                                <option value="Chocolate">Chocolate</option>
+                                <option value="Red Velvet">Red Velvet</option>
+                                <option value="Strawberry">Strawberry</option>
+                                <option value="Lemon">Lemon</option>
+                                <option value="Carrot">Carrot</option>
+                                <option value="Coconut">Coconut</option>
+                                <option value="Coffee">Coffee</option>
+                            </select>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="editCakeCategory" class="form-label">Category *</label>
-                            <select class="form-select" id="editCakeCategory" name="category" required>
-                                <option value="Birthday">Birthday</option>
-                                <option value="Wedding">Wedding</option>
-                                <option value="Anniversaries">Anniversaries</option>
-                                <option value="Cartoons">Cartoons</option>
-                                <option value="Other">Other</option>
+                            <label class="form-label">Frosting *</label>
+                            <select class="form-select" name="frosting" id="editFrosting" required>
+                                <option value="Buttercream">Buttercream</option>
+                                <option value="Cream Cheese">Cream Cheese</option>
+                                <option value="Whipped Cream">Whipped Cream</option>
+                                <option value="Ganache">Ganache</option>
+                                <option value="Fondant">Fondant</option>
                             </select>
                         </div>
                     </div>
-
-                    <div class="mb-3">
-                        <label for="editCakeDescription" class="form-label">Description</label>
-                        <textarea class="form-control" id="editCakeDescription" name="description" rows="3"></textarea>
-                    </div>
-
                     <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label for="editPrice4x3" class="form-label">Price 4x3 (₱) *</label>
-                            <input type="number" step="0.01" class="form-control" id="editPrice4x3" name="base_price_4x3" required>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Size *</label>
+                            <select class="form-select" name="size" id="editSize" required>
+                                <option value="6 inch">6 inch</option>
+                                <option value="8 inch">8 inch</option>
+                                <option value="10 inch">10 inch</option>
+                                <option value="12 inch">12 inch</option>
+                                <option value="Cupcake">Cupcake</option>
+                            </select>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="editPrice5x3" class="form-label">Price 5x3 (₱) *</label>
-                            <input type="number" step="0.01" class="form-control" id="editPrice5x3" name="base_price_5x3" required>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="editPrice6x3" class="form-label">Price 6x3 (₱) *</label>
-                            <input type="number" step="0.01" class="form-control" id="editPrice6x3" name="base_price_6x3" required>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Base Price *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" name="base_price" id="editBasePrice" step="0.01" min="1" required>
+                            </div>
                         </div>
                     </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Current Images</label>
-                        <div id="currentImages" class="d-flex flex-wrap gap-2"></div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="editCakeImages" class="form-label">Add New Images (Optional)</label>
-                        <input type="file" class="form-control" id="editCakeImages" name="images" multiple accept="image/*">
-                        <div class="form-text">Upload new images to add to this cake.</div>
-                    </div>
-
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="editIsFeatured" name="is_featured" value="1">
-                        <label class="form-check-label" for="editIsFeatured">
-                            Mark as Featured
-                        </label>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="availability" value="1" id="editAvailability">
+                        <label class="form-check-label" for="editAvailability">Available for orders</label>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn" style="background-color: #AC4037; color: white;">
-                        <i class="bi bi-check-circle"></i> Save Changes
-                    </button>
+                    <button type="submit" class="btn" style="background-color: #AC4037; color: white;">Save Changes</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> Confirm Delete</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="deleteItemName"></strong>?</p>
+                <p class="text-muted small">This action cannot be undone. All associated designs will also be deleted.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+// Store cake data for editing
+const cakesData = {{ cakes|tojson|safe }};
+
 function editCake(cakeId) {
-    // Fetch cake data
-    fetch(`/api/cakes/${cakeId}`)
-        .then(response => response.json())
-        .then(cake => {
-            document.getElementById('editCakeId').value = cake.cake_id;
-            document.getElementById('editCakeName').value = cake.name;
-            document.getElementById('editCakeCategory').value = cake.category;
-            document.getElementById('editCakeDescription').value = cake.description || '';
-            document.getElementById('editPrice4x3').value = cake.base_price_4x3;
-            document.getElementById('editPrice5x3').value = cake.base_price_5x3;
-            document.getElementById('editPrice6x3').value = cake.base_price_6x3;
-            document.getElementById('editIsFeatured').checked = cake.is_featured;
-
-            // Display current images
-            const currentImagesDiv = document.getElementById('currentImages');
-            currentImagesDiv.innerHTML = '';
-            if (cake.images && cake.images.length > 0) {
-                cake.images.forEach((img, index) => {
-                    const imgDiv = document.createElement('div');
-                    imgDiv.className = 'position-relative';
-                    imgDiv.innerHTML = `
-                        <img src="${img.image_url}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;">
-                        ${img.is_primary ? '<span class="badge bg-success position-absolute top-0 start-0">Primary</span>' : ''}
-                    `;
-                    currentImagesDiv.appendChild(imgDiv);
-                });
-            }
-
-            // Set form action
-            document.getElementById('editCakeForm').action = `/admin/cakes/edit/${cakeId}`;
-
-            // Show modal
-            new bootstrap.Modal(document.getElementById('editCakeModal')).show();
-        })
-        .catch(error => {
-            console.error('Error fetching cake:', error);
-            alert('Error loading cake data');
-        });
-}
-
-function deleteCake(cakeId, cakeName) {
-    if (confirm(`Are you sure you want to delete "${cakeName}"? This action cannot be undone.`)) {
-        fetch(`/admin/cakes/delete/${cakeId}`, {
-            method: 'POST'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Cake deleted successfully!');
-                location.reload();
-            } else {
-                alert('Error deleting cake: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error deleting cake:', error);
-            alert('Error deleting cake');
-        });
+    const cake = cakesData.find(c => c.cake_id === cakeId);
+    if (cake) {
+        document.getElementById('editCakeName').value = cake.cake_name;
+        document.getElementById('editFlavor').value = cake.flavor;
+        document.getElementById('editFrosting').value = cake.frosting;
+        document.getElementById('editSize').value = cake.size;
+        document.getElementById('editBasePrice').value = cake.base_price;
+        document.getElementById('editAvailability').checked = cake.availability;
+        document.getElementById('editCakeForm').action = `/admin/cakes/edit/${cakeId}`;
+        new bootstrap.Modal(document.getElementById('editCakeModal')).show();
     }
 }
+
+let deleteId = null;
+function confirmDelete(id, name) {
+    deleteId = id;
+    document.getElementById('deleteItemName').textContent = name;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', function() {
+            if (deleteId) {
+                fetch(`/admin/cakes/delete/${deleteId}`, { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+                    if (data.success) {
+                        showToast('Cake deleted successfully!', 'success');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        showToast(data.message || 'Failed to delete', 'error');
+                    }
+                })
+                .catch(err => {
+                    bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+                    showToast('Error deleting cake: ' + err.message, 'error');
+                });
+            }
+        });
+    }
+});
+
+// Check for URL params for toast messages
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('success')) showToast(urlParams.get('success'), 'success');
+if (urlParams.get('error')) showToast(urlParams.get('error'), 'error');
+
+// Search and Filter Functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const flavorFilter = document.getElementById('flavorFilter');
+    const availabilityFilter = document.getElementById('availabilityFilter');
+    const sortOrder = document.getElementById('sortOrder');
+    const tableBody = document.getElementById('cakesTableBody');
+    const cakeCount = document.getElementById('cakeCount');
+    
+    function filterAndSort() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const flavor = flavorFilter.value;
+        const availability = availabilityFilter.value;
+        const sort = sortOrder.value;
+        
+        const rows = Array.from(tableBody.querySelectorAll('tr'));
+        let visibleCount = 0;
+        
+        rows.forEach(row => {
+            const name = row.dataset.name || '';
+            const rowFlavor = row.dataset.flavor || '';
+            const rowAvail = row.dataset.availability || '';
+            
+            const matchesSearch = name.includes(searchTerm);
+            const matchesFlavor = !flavor || rowFlavor === flavor;
+            const matchesAvail = !availability || rowAvail === availability;
+            
+            if (matchesSearch && matchesFlavor && matchesAvail) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        // Sort visible rows
+        const visibleRows = rows.filter(r => r.style.display !== 'none');
+        visibleRows.sort((a, b) => {
+            if (sort === 'name') return a.dataset.name.localeCompare(b.dataset.name);
+            if (sort === 'price-asc') return parseFloat(a.dataset.price) - parseFloat(b.dataset.price);
+            if (sort === 'price-desc') return parseFloat(b.dataset.price) - parseFloat(a.dataset.price);
+            return 0;
+        });
+        visibleRows.forEach(row => tableBody.appendChild(row));
+        
+        cakeCount.textContent = visibleCount;
+    }
+    
+    searchInput.addEventListener('input', filterAndSort);
+    flavorFilter.addEventListener('change', filterAndSort);
+    availabilityFilter.addEventListener('change', filterAndSort);
+    sortOrder.addEventListener('change', filterAndSort);
+});
 </script>
 {% endblock %}

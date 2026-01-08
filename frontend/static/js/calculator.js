@@ -1,20 +1,12 @@
 // Price Calculator Logic for Crumbear Cakes
 
 let calculatorState = {
-    baseCakeId: null,
     size: null,
     basePrice: 0,
     numLayers: 1,
     flavorId: null,
     flavorPricePerLayer: 0,
-    toppings: [], // {id, name, price, quantity}
-    icing: { // {part, colorId, colorName, shade, multiplier}
-        base: null,
-        sides: null,
-        other: null
-    },
-    hasMessage: false,
-    isRush: false
+    toppings: [] // {id, name, price, quantity}
 };
 
 // Initialize calculator
@@ -22,44 +14,54 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Calculator initialized');
     
     // Load data from API
+    loadSizes();
     loadFlavors();
     loadToppings();
-    loadIcingColors();
-    loadBaseCakes();
     
     // Set up event listeners
-    setupSizeSelection();
     setupLayerSelection();
     setupFlavorSelection();
-    setupIcingSelection();
-    setupAdditionalOptions();
-    setupSaveButton();
 });
 
 // ========================================
 // Load Data from API
 // ========================================
 
-async function loadBaseCakes() {
+async function loadSizes() {
     try {
-        // TODO: Replace with actual API call
-        const response = await fetch('/api/cakes');
-        const cakes = await response.json();
-        
-        const select = document.getElementById('baseCakeSelect');
-        cakes.forEach(cake => {
-            const option = document.createElement('option');
-            option.value = cake.cake_id;
-            option.textContent = `${cake.name} (${cake.category})`;
-            option.dataset.price4x3 = cake.base_price_4x3;
-            option.dataset.price5x3 = cake.base_price_5x3;
-            option.dataset.price6x3 = cake.base_price_6x3;
-            select.appendChild(option);
-        });
+        const response = await fetch('/api/sizes');
+        const sizes = await response.json();
+        renderSizes(sizes);
     } catch (error) {
-        console.log('Using mock data for base cakes');
-        // Mock data for now
+        console.log('Using mock data for sizes');
+        // Mock data fallback
+        const mockSizes = [
+            {size_id: 1, name: '4x3', description: '4 inches diameter, 3 inches height', base_price: 200},
+            {size_id: 2, name: '5x3', description: '5 inches diameter, 3 inches height', base_price: 300},
+            {size_id: 3, name: '6x3', description: '6 inches diameter, 3 inches height', base_price: 400}
+        ];
+        renderSizes(mockSizes);
     }
+}
+
+function renderSizes(sizes) {
+    const container = document.getElementById('sizeOptions');
+    container.innerHTML = '';
+    
+    sizes.forEach(size => {
+        const col = document.createElement('div');
+        col.className = 'col-md-4';
+        col.innerHTML = `
+            <div class="size-option" data-size="${size.name}" data-price="${size.base_price}" data-id="${size.size_id}">
+                <h5>${size.name}</h5>
+                <p class="mb-0">Base: <strong>₱${parseFloat(size.base_price).toFixed(2)}</strong></p>
+            </div>
+        `;
+        container.appendChild(col);
+    });
+    
+    // Setup click listeners after rendering
+    setupSizeSelection();
 }
 
 async function loadFlavors() {
@@ -80,11 +82,11 @@ async function loadFlavors() {
         console.log('Using mock data for flavors');
         // Mock data
         const mockFlavors = [
-            {flavor_id: 1, name: 'Chocolate', price_per_layer: 50},
+            {flavor_id: 1, name: 'Chocolate', price_per_layer: 30},
             {flavor_id: 2, name: 'Vanilla', price_per_layer: 40},
-            {flavor_id: 3, name: 'Red Velvet', price_per_layer: 60},
-            {flavor_id: 4, name: 'Strawberry', price_per_layer: 55},
-            {flavor_id: 5, name: 'Ube', price_per_layer: 65}
+            {flavor_id: 3, name: 'Strawberry', price_per_layer: 55},
+            {flavor_id: 4, name: 'Ube', price_per_layer: 45},
+            {flavor_id: 5, name: 'Mocha', price_per_layer: 35}
         ];
         
         const select = document.getElementById('flavorSelect');
@@ -110,15 +112,9 @@ async function loadToppings() {
         // Mock data
         const mockToppings = [
             {topping_id: 1, name: 'Cherry', price: 20},
-            {topping_id: 2, name: 'Strawberry', price: 25},
-            {topping_id: 3, name: 'Chocolate Chips', price: 15},
-            {topping_id: 4, name: 'Sprinkles', price: 10},
-            {topping_id: 5, name: 'Oreo Crumbs', price: 30},
-            {topping_id: 6, name: 'Macaron', price: 35},
-            {topping_id: 7, name: 'Fresh Berries', price: 40},
-            {topping_id: 8, name: 'Caramel Drizzle', price: 20},
-            {topping_id: 9, name: 'Whipped Cream', price: 15},
-            {topping_id: 10, name: 'Edible Flowers', price: 50}
+            {topping_id: 2, name: 'Chocolate Chips', price: 15},
+            {topping_id: 3, name: 'Strawberry', price: 25},
+            {topping_id: 4, name: 'Sprinkles', price: 10}
         ];
         
         renderToppings(mockToppings);
@@ -131,74 +127,75 @@ function renderToppings(toppings) {
     
     toppings.forEach(topping => {
         const div = document.createElement('div');
-        div.className = 'topping-item row align-items-center';
+        div.className = 'topping-item row align-items-center mb-2';
         div.innerHTML = `
             <div class="col-md-6">
                 <strong>${topping.name}</strong>
                 <span class="text-muted ms-2">(₱${topping.price} each)</span>
             </div>
             <div class="col-md-6">
-                <input type="number" 
-                       class="form-control topping-quantity" 
-                       data-id="${topping.topping_id}"
-                       data-name="${topping.name}"
-                       data-price="${topping.price}"
-                       min="0" 
-                       max="10" 
-                       value="0"
-                       placeholder="Qty">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-secondary topping-btn-minus"
+                            data-id="${topping.topping_id}"
+                            data-name="${topping.name}"
+                            data-price="${topping.price}">−</button>
+                    <span class="btn btn-outline-secondary topping-quantity-display" 
+                          id="topping-qty-${topping.topping_id}">0</span>
+                    <button type="button" class="btn btn-outline-secondary topping-btn-plus"
+                            data-id="${topping.topping_id}"
+                            data-name="${topping.name}"
+                            data-price="${topping.price}">+</button>
+                </div>
             </div>
         `;
         container.appendChild(div);
     });
     
-    // Add event listeners to quantity inputs
-    document.querySelectorAll('.topping-quantity').forEach(input => {
-        input.addEventListener('change', updateToppings);
+    // Add event listeners to +/- buttons
+    document.querySelectorAll('.topping-btn-minus').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = parseInt(this.dataset.id);
+            const name = this.dataset.name;
+            const price = parseFloat(this.dataset.price);
+            adjustTopping(id, name, price, -1);
+        });
     });
-}
-
-async function loadIcingColors() {
-    try {
-        // TODO: Replace with actual API call
-        const response = await fetch('/api/colors');
-        const colors = await response.json();
-        
-        renderIcingColors(colors);
-    } catch (error) {
-        console.log('Using mock data for icing colors');
-        // Mock data
-        const mockColors = [
-            {color_id: 1, color_name: 'Red', hex_code: '#FF0000'},
-            {color_id: 2, color_name: 'Pink', hex_code: '#FFC0CB'},
-            {color_id: 3, color_name: 'Blue', hex_code: '#0000FF'},
-            {color_id: 4, color_name: 'Green', hex_code: '#00FF00'},
-            {color_id: 5, color_name: 'Yellow', hex_code: '#FFFF00'},
-            {color_id: 6, color_name: 'Purple', hex_code: '#800080'},
-            {color_id: 7, color_name: 'Orange', hex_code: '#FFA500'},
-            {color_id: 8, color_name: 'Brown', hex_code: '#8B4513'},
-            {color_id: 9, color_name: 'White', hex_code: '#FFFFFF'},
-            {color_id: 10, color_name: 'Black', hex_code: '#000000'}
-        ];
-        
-        renderIcingColors(mockColors);
-    }
-}
-
-function renderIcingColors(colors) {
-    const selects = document.querySelectorAll('.icing-select');
     
-    selects.forEach(select => {
-        colors.forEach(color => {
-            const option = document.createElement('option');
-            option.value = color.color_id;
-            option.textContent = color.color_name;
-            option.dataset.name = color.color_name;
-            option.dataset.hex = color.hex_code;
-            select.appendChild(option);
+    document.querySelectorAll('.topping-btn-plus').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = parseInt(this.dataset.id);
+            const name = this.dataset.name;
+            const price = parseFloat(this.dataset.price);
+            adjustTopping(id, name, price, 1);
         });
     });
 }
+
+function adjustTopping(id, name, price, change) {
+    // Find existing topping in state
+    let topping = calculatorState.toppings.find(t => t.id === id);
+    
+    if (!topping) {
+        topping = {id, name, price, quantity: 0};
+        calculatorState.toppings.push(topping);
+    }
+    
+    // Adjust quantity (min 0, max 10)
+    topping.quantity = Math.max(0, Math.min(10, topping.quantity + change));
+    
+    // Remove topping if quantity is 0
+    if (topping.quantity === 0) {
+        calculatorState.toppings = calculatorState.toppings.filter(t => t.id !== id);
+    }
+    
+    // Update display
+    document.getElementById(`topping-qty-${id}`).textContent = topping.quantity;
+    
+    // Update price
+    updatePrice();
+}
+
+// Icing colors and rendering removed - now using Light/Medium/Dark shades only
 
 // ========================================
 // Event Handlers
@@ -242,80 +239,9 @@ function setupFlavorSelection() {
     });
 }
 
-function updateToppings(event) {
-    const input = event.target;
-    const id = parseInt(input.dataset.id);
-    const name = input.dataset.name;
-    const price = parseFloat(input.dataset.price);
-    const quantity = parseInt(input.value) || 0;
-    
-    // Remove existing topping
-    calculatorState.toppings = calculatorState.toppings.filter(t => t.id !== id);
-    
-    // Add if quantity > 0
-    if (quantity > 0) {
-        calculatorState.toppings.push({id, name, price, quantity});
-    }
-    
-    updatePrice();
-}
+// updateToppings function removed - now using adjustTopping with +/- buttons
 
-function setupIcingSelection() {
-    document.querySelectorAll('.icing-select').forEach(select => {
-        select.addEventListener('change', function() {
-            const part = this.dataset.part.toLowerCase();
-            const shadeDiv = document.getElementById(`shade${this.dataset.part}`);
-            
-            if (this.value) {
-                shadeDiv.style.display = 'block';
-                const selectedOption = this.options[this.selectedIndex];
-                
-                if (!calculatorState.icing[part]) {
-                    calculatorState.icing[part] = {};
-                }
-                calculatorState.icing[part].colorId = parseInt(this.value);
-                calculatorState.icing[part].colorName = selectedOption.dataset.name;
-            } else {
-                shadeDiv.style.display = 'none';
-                calculatorState.icing[part] = null;
-            }
-            
-            updatePrice();
-        });
-    });
-    
-    // Shade selection
-    document.querySelectorAll('input[name^="shade"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            const part = this.name.replace('shade', '').toLowerCase();
-            const multiplier = parseFloat(this.dataset.multiplier);
-            const shade = this.value;
-            
-            if (calculatorState.icing[part]) {
-                calculatorState.icing[part].shade = shade;
-                calculatorState.icing[part].multiplier = multiplier;
-            }
-            
-            updatePrice();
-        });
-    });
-}
-
-function setupAdditionalOptions() {
-    document.getElementById('hasMessage').addEventListener('change', function() {
-        calculatorState.hasMessage = this.checked;
-        updatePrice();
-    });
-    
-    document.getElementById('isRush').addEventListener('change', function() {
-        calculatorState.isRush = this.checked;
-        updatePrice();
-    });
-}
-
-function setupSaveButton() {
-    document.getElementById('saveEstimateBtn').addEventListener('click', saveEstimate);
-}
+// Save estimate functionality removed
 
 // ========================================
 // Price Calculation
@@ -323,31 +249,23 @@ function setupSaveButton() {
 
 function updatePrice() {
     const base = calculatorState.basePrice;
-    const layers = calculatorState.numLayers * calculatorState.flavorPricePerLayer;
-    const toppings = calculatorState.toppings.reduce((sum, t) => sum + (t.price * t.quantity), 0);
     
-    // Calculate icing cost
-    let icing = 0;
-    Object.values(calculatorState.icing).forEach(icingPart => {
-        if (icingPart && icingPart.multiplier) {
-            const baseIcingCost = 50; // Base cost per icing part
-            icing += baseIcingCost * icingPart.multiplier;
-        }
-    });
+    // Layer cost: 20% of base price per layer above 1
+    const layerCost = base * 0.20 * (calculatorState.numLayers - 1);
     
-    const message = calculatorState.hasMessage ? 50 : 0;
+    // Flavor cost: separate from layers
+    const flavorCost = calculatorState.flavorPricePerLayer || 0;
     
-    let subtotal = base + layers + toppings + icing + message;
-    const rush = calculatorState.isRush ? subtotal * 0.5 : 0;
-    const total = subtotal + rush;
+    // Toppings
+    const toppingsCost = calculatorState.toppings.reduce((sum, t) => sum + (t.price * t.quantity), 0);
+    
+    const total = base + layerCost + flavorCost + toppingsCost;
     
     // Update UI
     document.getElementById('priceBase').textContent = formatPrice(base);
-    document.getElementById('priceLayers').textContent = formatPrice(layers);
-    document.getElementById('priceToppings').textContent = formatPrice(toppings);
-    document.getElementById('priceIcing').textContent = formatPrice(icing);
-    document.getElementById('priceMessage').textContent = formatPrice(message);
-    document.getElementById('priceRush').textContent = formatPrice(rush);
+    document.getElementById('priceLayers').textContent = formatPrice(layerCost);
+    document.getElementById('priceFlavor').textContent = formatPrice(flavorCost);
+    document.getElementById('priceToppings').textContent = formatPrice(toppingsCost);
     document.getElementById('priceTotal').textContent = formatPrice(total);
     document.getElementById('totalPrice').textContent = formatPrice(total);
 }
@@ -372,15 +290,18 @@ async function saveEstimate() {
         return;
     }
     
+    // Validate base icing (required)
+    if (!calculatorState.icing.base) {
+        showNotification('Please select a shade for the Base icing (required)', 'danger');
+        return;
+    }
+    
     const estimateData = {
-        cake_id: calculatorState.baseCakeId,
         size: calculatorState.size,
         num_layers: calculatorState.numLayers,
         flavor_id: calculatorState.flavorId,
         toppings: calculatorState.toppings,
         icing: calculatorState.icing,
-        has_message: calculatorState.hasMessage,
-        is_rush: calculatorState.isRush,
         total_price: parseFloat(document.getElementById('priceTotal').textContent.replace('₱', ''))
     };
     
@@ -404,4 +325,26 @@ async function saveEstimate() {
         console.log('Mock save:', estimateData);
         showNotification('Price estimate saved successfully! 🎉', 'success');
     }
+}
+
+// ========================================
+// Utility Functions
+// ========================================
+
+function showNotification(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.setAttribute('role', 'alert');
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    const container = document.querySelector('.container-fluid');
+    container.insertBefore(alertDiv, container.firstChild);
+    
+    // Auto dismiss after 3 seconds
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 3000);
 }

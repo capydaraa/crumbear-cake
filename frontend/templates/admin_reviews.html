@@ -1,0 +1,316 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Manage Reviews - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h1 class="mb-2"><i class="bi bi-star"></i> Manage Reviews</h1>
+            <p class="text-muted">View and manage customer reviews for cake designs</p>
+        </div>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" id="searchInput" placeholder="Search reviews...">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="ratingFilter">
+                        <option value="">All Ratings</option>
+                        <option value="5">⭐⭐⭐⭐⭐ 5 Stars</option>
+                        <option value="4">⭐⭐⭐⭐ 4 Stars</option>
+                        <option value="3">⭐⭐⭐ 3 Stars</option>
+                        <option value="2">⭐⭐ 2 Stars</option>
+                        <option value="1">⭐ 1 Star</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="sortOrder">
+                        <option value="date-desc">Newest First</option>
+                        <option value="date-asc">Oldest First</option>
+                        <option value="rating-desc">Highest Rating</option>
+                        <option value="rating-asc">Lowest Rating</option>
+                    </select>
+                </div>
+                <div class="col-md-2 text-end">
+                    <span class="badge bg-secondary" style="font-size: 0.9rem;"><span id="reviewCount">{{ reviews|length }}</span> reviews</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reviews Table -->
+    <div class="card shadow-sm">
+        <div class="card-header" style="background-color: #AC4037;">
+            <h5 class="mb-0 text-white">All Reviews</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="reviewsTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Customer</th>
+                            <th>Design (Cake)</th>
+                            <th>Rating</th>
+                            <th>Review Text</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reviewsTableBody">
+                        {% for review in reviews %}
+                        <tr data-customer="{{ review.customer_name|lower }}" data-theme="{{ review.theme|lower }}" data-rating="{{ review.rating }}" data-date="{{ review.review_date }}" style="{{ 'opacity: 0.5;' if review.is_hidden else '' }}">
+                            <td>{{ review.review_id }}</td>
+                            <td><strong>{{ review.customer_name }}</strong></td>
+                            <td>
+                                <span class="badge" style="background-color: #BF6865;">{{ review.theme }}</span>
+                                <br><small class="text-muted">{{ review.cake_name }}</small>
+                            </td>
+                            <td>
+                                <span class="text-warning">
+                                    {% for i in range(5) %}
+                                        {% if i < review.rating %}
+                                        <i class="bi bi-star-fill"></i>
+                                        {% else %}
+                                        <i class="bi bi-star"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </span>
+                            </td>
+                            <td style="max-width: 300px;">
+                                <small>{{ review.review_text|truncate(100) }}</small>
+                            </td>
+                            <td>{% if review.review_date %}{{ review.review_date[5:7] }}-{{ review.review_date[8:10] }}-{{ review.review_date[:4] }}{% endif %}</td>
+                            <td class="text-nowrap">
+                                <button class="btn btn-sm p-1 toggle-hide-btn" style="border: none; background: none;" 
+                                        onclick="toggleHideReview({{ review.review_id }}, this)" 
+                                        title="{{ 'Show Review' if review.is_hidden else 'Hide Review' }}"
+                                        data-hidden="{{ 'true' if review.is_hidden else 'false' }}">
+                                    <i class="bi {{ 'bi-eye' if review.is_hidden else 'bi-eye-slash' }}" style="color: {{ '#6c757d' if review.is_hidden else '#AC4037' }};"></i>
+                                </button>
+                                <button class="btn btn-sm text-danger p-1" style="border: none; background: none;" onclick="confirmDelete({{ review.review_id }})" title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Review Modal -->
+<div class="modal fade" id="addReviewModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #EDCAD4;">
+                <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Add New Review</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('admin_add_review') }}" method="POST" onsubmit="return validateForm(this)">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Customer *</label>
+                        <select class="form-select" name="customer_id" required>
+                            <option value="">Select customer...</option>
+                            {% for customer in customers %}
+                            <option value="{{ customer.customer_id }}">{{ customer.full_name }} ({{ customer.email }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Cake Design *</label>
+                        <select class="form-select" name="design_id" required>
+                            <option value="">Select design...</option>
+                            {% for design in designs %}
+                            <option value="{{ design.design_id }}">{{ design.theme }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Rating *</label>
+                        <select class="form-select" name="rating" required>
+                            <option value="">Select rating...</option>
+                            <option value="5">⭐⭐⭐⭐⭐ (5 - Excellent)</option>
+                            <option value="4">⭐⭐⭐⭐ (4 - Very Good)</option>
+                            <option value="3">⭐⭐⭐ (3 - Good)</option>
+                            <option value="2">⭐⭐ (2 - Fair)</option>
+                            <option value="1">⭐ (1 - Poor)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Review Text</label>
+                        <textarea class="form-control" name="review_text" rows="3" maxlength="500" placeholder="Write the review..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn" style="background-color: #AC4037; color: white;">Add Review</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> Confirm Delete</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this review?</p>
+                <p class="text-muted small">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const reviewsData = {{ reviews|tojson|safe }};
+
+function toggleHideReview(reviewId, btn) {
+    const isCurrentlyHidden = btn.dataset.hidden === 'true';
+    const newHiddenState = !isCurrentlyHidden;
+    
+    fetch(`/admin/reviews/toggle-hide/${reviewId}`, { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_hidden: newHiddenState })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            // Update button appearance
+            btn.dataset.hidden = newHiddenState ? 'true' : 'false';
+            const icon = btn.querySelector('i');
+            if (newHiddenState) {
+                icon.className = 'bi bi-eye';
+                icon.style.color = '#6c757d';
+                btn.title = 'Show Review';
+                // Optionally fade the row to show it's hidden
+                btn.closest('tr').style.opacity = '0.5';
+            } else {
+                icon.className = 'bi bi-eye-slash';
+                icon.style.color = '#AC4037';
+                btn.title = 'Hide Review';
+                btn.closest('tr').style.opacity = '1';
+            }
+            showToast(newHiddenState ? 'Review hidden from public view' : 'Review is now visible', 'success');
+        } else {
+            showToast(data.message || 'Failed to update review visibility', 'error');
+        }
+    })
+    .catch(err => {
+        showToast('Error updating review: ' + err.message, 'error');
+    });
+}
+
+let deleteId = null;
+function confirmDelete(id) {
+    deleteId = id;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', function() {
+            if (deleteId) {
+                fetch(`/admin/reviews/delete/${deleteId}`, { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+                    if (data.success) {
+                        showToast('Review deleted successfully!', 'success');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        showToast(data.message || 'Failed to delete', 'error');
+                    }
+                })
+                .catch(err => {
+                    bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+                    showToast('Error deleting review: ' + err.message, 'error');
+                });
+            }
+        });
+    }
+});
+
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('success')) showToast(urlParams.get('success'), 'success');
+if (urlParams.get('error')) showToast(urlParams.get('error'), 'error');
+
+// Search and Filter Functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const ratingFilter = document.getElementById('ratingFilter');
+    const sortOrder = document.getElementById('sortOrder');
+    const tableBody = document.getElementById('reviewsTableBody');
+    const reviewCount = document.getElementById('reviewCount');
+    
+    function filterAndSort() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const rating = ratingFilter.value;
+        const sort = sortOrder.value;
+        
+        const rows = Array.from(tableBody.querySelectorAll('tr'));
+        let visibleCount = 0;
+        
+        rows.forEach(row => {
+            const customer = row.dataset.customer || '';
+            const theme = row.dataset.theme || '';
+            const rowRating = row.dataset.rating || '';
+            
+            const matchesSearch = customer.includes(searchTerm) || theme.includes(searchTerm);
+            const matchesRating = !rating || rowRating === rating;
+            
+            if (matchesSearch && matchesRating) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        // Sort visible rows
+        const visibleRows = rows.filter(r => r.style.display !== 'none');
+        visibleRows.sort((a, b) => {
+            if (sort === 'date-desc') return new Date(b.dataset.date) - new Date(a.dataset.date);
+            if (sort === 'date-asc') return new Date(a.dataset.date) - new Date(b.dataset.date);
+            if (sort === 'rating-desc') return parseInt(b.dataset.rating) - parseInt(a.dataset.rating);
+            if (sort === 'rating-asc') return parseInt(a.dataset.rating) - parseInt(b.dataset.rating);
+            return 0;
+        });
+        visibleRows.forEach(row => tableBody.appendChild(row));
+        
+        reviewCount.textContent = visibleCount;
+    }
+    
+    searchInput.addEventListener('input', filterAndSort);
+    ratingFilter.addEventListener('change', filterAndSort);
+    sortOrder.addEventListener('change', filterAndSort);
+});
+</script>
+{% endblock %}

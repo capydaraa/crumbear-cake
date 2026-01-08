@@ -11,37 +11,57 @@
         </div>
     </div>
 
-    <!-- Statistics Cards -->
+    <!-- Statistics Cards Row 1 -->
     <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card text-white" style="background-color: #AC4037;">
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card h-100" style="background-color: white; border: 1px solid #edcad4;">
                 <div class="card-body">
-                    <h6 class="card-subtitle mb-2 text-white-50">Total Cakes</h6>
-                    <h2 class="card-title mb-0">{{ stats.total_cakes }}</h2>
+                    <h6 class="card-subtitle mb-2" style="color: #BF6865;">Total Cakes</h6>
+                    <h2 class="card-title mb-0" style="color: #AC4037;">{{ stats.total_cakes }}</h2>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card text-white" style="background-color: #BF6865;">
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card h-100" style="background-color: white; border: 1px solid #edcad4;">
                 <div class="card-body">
-                    <h6 class="card-subtitle mb-2 text-white-50">Total Views</h6>
-                    <h2 class="card-title mb-0">{{ stats.total_views }}</h2>
+                    <h6 class="card-subtitle mb-2" style="color: #BF6865;">Total Designs</h6>
+                    <h2 class="card-title mb-0" style="color: #AC4037;">{{ stats.total_designs }}</h2>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card text-white" style="background-color: #D2847A;">
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card h-100" style="background-color: white; border: 1px solid #edcad4;">
                 <div class="card-body">
-                    <h6 class="card-subtitle mb-2 text-white-50">Price Estimates</h6>
-                    <h2 class="card-title mb-0">{{ stats.total_estimates }}</h2>
+                    <h6 class="card-subtitle mb-2" style="color: #BF6865;">Customers</h6>
+                    <h2 class="card-title mb-0" style="color: #AC4037;">{{ stats.total_customers }}</h2>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card text-white" style="background-color: #E7BCC7;">
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card h-100" style="background-color: white; border: 1px solid #edcad4;">
                 <div class="card-body">
-                    <h6 class="card-subtitle mb-2 text-white-50">Featured Cakes</h6>
-                    <h2 class="card-title mb-0">{{ stats.featured_cakes }}</h2>
+                    <h6 class="card-subtitle mb-2" style="color: #BF6865;">Total Reviews</h6>
+                    <h2 class="card-title mb-0" style="color: #AC4037;">{{ stats.total_reviews }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards Row 2 -->
+    <div class="row mb-4">
+        <div class="col-md-6 col-sm-6 mb-3">
+            <div class="card h-100" style="background-color: white; border: 1px solid #edcad4;">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2" style="color: #BF6865;">Avg Rating</h6>
+                    <h2 class="card-title mb-0" style="color: #AC4037;">{{ "%.1f"|format(stats.avg_rating) }} / 5</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-sm-6 mb-3">
+            <div class="card h-100" style="background-color: white; border: 1px solid #edcad4;">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2" style="color: #BF6865;">Available Cakes</h6>
+                    <h2 class="card-title mb-0" style="color: #AC4037;">{{ stats.available_cakes }}</h2>
                 </div>
             </div>
         </div>
@@ -49,67 +69,66 @@
 
     <!-- Charts Row -->
     <div class="row mb-4">
-        <div class="col-md-8">
-            <div class="card shadow-sm">
-                <div class="card-header" style="background-color: #EDCAD4;">
-                    <h5 class="mb-0">Most Viewed Cakes</h5>
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">📊 Complexity Distribution</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="topCakesChart" height="80"></canvas>
+                    <canvas id="complexityChart" height="150"></canvas>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card shadow-sm">
-                <div class="card-header" style="background-color: #EDCAD4;">
-                    <h5 class="mb-0">Cakes by Category</h5>
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">⭐ Rating Distribution</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="categoryChart"></canvas>
+                    <canvas id="ratingChart" height="150"></canvas>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Most Viewed Cakes Table -->
+    <!-- Top Designs Table -->
     <div class="row mb-4">
-        <div class="col-12">
+        <div class="col-md-8">
             <div class="card shadow-sm">
-                <div class="card-header" style="background-color: #EDCAD4;">
-                    <h5 class="mb-0">Top 10 Most Viewed Cakes</h5>
+                <div class="card-header">
+                    <h5 class="mb-0">🏆 Top Rated Designs</h5>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="table table-hover mb-0">
                             <thead>
                                 <tr>
-                                    <th>Rank</th>
-                                    <th>Cake Name</th>
-                                    <th>Category</th>
-                                    <th>Views</th>
-                                    <th>Base Price (5x3)</th>
-                                    <th>Featured</th>
-                                    <th>Actions</th>
+                                    <th>Design</th>
+                                    <th>Cake</th>
+                                    <th>Rating</th>
+                                    <th>Reviews</th>
+                                    <th>Price</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for cake in top_cakes %}
+                                {% for design in top_designs %}
                                 <tr>
-                                    <td><strong>{{ loop.index }}</strong></td>
-                                    <td>{{ cake.name }}</td>
-                                    <td><span class="badge" style="background-color: #BF6865;">{{ cake.category }}</span></td>
-                                    <td><strong>{{ cake.view_count }}</strong></td>
-                                    <td>₱{{ "%.2f"|format(cake.base_price_5x3) }}</td>
+                                    <td><strong>{{ design.theme }}</strong></td>
+                                    <td>{{ design.cake_name }}</td>
                                     <td>
-                                        {% if cake.is_featured %}
-                                        <span class="badge bg-success">Yes</span>
-                                        {% else %}
-                                        <span class="badge bg-secondary">No</span>
-                                        {% endif %}
+                                        <span class="text-warning">
+                                            {% for i in range(5) %}
+                                                {% if i < design.avg_rating|int %}
+                                                <i class="bi bi-star-fill"></i>
+                                                {% else %}
+                                                <i class="bi bi-star"></i>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </span>
+                                        <small>({{ design.avg_rating }})</small>
                                     </td>
-                                    <td>
-                                        <a href="{{ url_for('admin_edit_cake', cake_id=cake.cake_id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
-                                    </td>
+                                    <td><span class="badge bg-info">{{ design.review_count }}</span></td>
+                                    <td><strong>₱{{ "%.2f"|format(design.calculated_price) }}</strong></td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -118,95 +137,87 @@
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Quick Actions -->
-    <div class="row">
-        <div class="col-12">
+        <div class="col-md-4">
             <div class="card shadow-sm">
-                <div class="card-header" style="background-color: #EDCAD4;">
-                    <h5 class="mb-0">Quick Actions</h5>
+                <div class="card-header">
+                    <h5 class="mb-0">🌍 Customers by City</h5>
                 </div>
                 <div class="card-body">
-                    <a href="{{ url_for('admin_cakes') }}" class="btn btn-lg me-2 mb-2" style="background-color: #AC4037; color: white;">
-                        <i class="bi bi-cake2"></i> Manage Cakes
-                    </a>
-                    <a href="{{ url_for('admin_toppings') }}" class="btn btn-lg me-2 mb-2" style="background-color: #BF6865; color: white;">
-                        <i class="bi bi-star"></i> Manage Toppings
-                    </a>
-                    <a href="{{ url_for('admin_flavors') }}" class="btn btn-lg me-2 mb-2" style="background-color: #D2847A; color: white;">
-                        <i class="bi bi-palette"></i> Manage Flavors
-                    </a>
-                    <a href="{{ url_for('admin_colors') }}" class="btn btn-lg mb-2" style="background-color: #E7BCC7; color: white;">
-                        <i class="bi bi-paint-bucket"></i> Manage Colors
-                    </a>
+                    <canvas id="cityChart" height="200"></canvas>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script>
-    // Most Viewed Cakes Chart
-    const topCakesCtx = document.getElementById('topCakesChart').getContext('2d');
-    new Chart(topCakesCtx, {
-        type: 'bar',
-        data: {
-            labels: {{ chart_data.cake_names | tojson }},
-            datasets: [{
-                label: 'Views',
-                data: {{ chart_data.cake_views | tojson }},
-                backgroundColor: '#AC4037',
-                borderColor: '#AC4037',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        stepSize: 1
-                    }
-                }
-            }
-        }
-    });
 
-    // Category Distribution Chart
-    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
-    new Chart(categoryCtx, {
-        type: 'doughnut',
-        data: {
-            labels: {{ chart_data.categories | tojson }},
-            datasets: [{
-                data: {{ chart_data.category_counts | tojson }},
-                backgroundColor: [
-                    '#AC4037',
-                    '#BF6865',
-                    '#D2847A',
-                    '#E7BCC7',
-                    '#EDCAD4'
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
+<script>
+// Chart data from backend
+const chartData = {{ chart_data|tojson|safe }};
+
+// Complexity Distribution Chart
+new Chart(document.getElementById('complexityChart'), {
+    type: 'doughnut',
+    data: {
+        labels: chartData.complexity_levels,
+        datasets: [{
+            data: chartData.complexity_counts,
+            backgroundColor: ['#AC4037', '#BF6865', '#D2847A', '#EDCAD4'],
+            borderWidth: 2,
+            borderColor: '#fff'
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { position: 'bottom' }
         }
-    });
+    }
+});
+
+// Rating Distribution Chart
+new Chart(document.getElementById('ratingChart'), {
+    type: 'bar',
+    data: {
+        labels: ['1 Star', '2 Stars', '3 Stars', '4 Stars', '5 Stars'],
+        datasets: [{
+            label: 'Number of Reviews',
+            data: chartData.rating_distribution,
+            backgroundColor: ['#AC4037', '#BF6865', '#D2847A', '#E7BCC7', '#EDCAD4'],
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: { beginAtZero: true }
+        }
+    }
+});
+
+// Customers by City Chart
+new Chart(document.getElementById('cityChart'), {
+    type: 'pie',
+    data: {
+        labels: chartData.cities,
+        datasets: [{
+            data: chartData.city_counts,
+            backgroundColor: ['#AC4037', '#BF6865', '#D2847A', '#E7BCC7', '#EDCAD4', '#F5E1E6'],
+            borderWidth: 2,
+            borderColor: '#fff'
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { position: 'bottom' }
+        }
+    }
+});
 </script>
 {% endblock %}

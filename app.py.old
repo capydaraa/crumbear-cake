@@ -1,0 +1,725 @@
+# Crumbear Cake Management System - Main Flask Application with Database
+# Connects to SQL Server for persistent data storage
+
+from flask import Flask, render_template, request, redirect, url_for, jsonify, session
+import os
+from werkzeug.utils import secure_filename
+import sys
+
+# Add database directory to path
+sys.path.append(os.path.join(os.path.dirname(__file__), 'database'))
+from db_connection import execute_query, execute_insert
+
+app = Flask(__name__, 
+            template_folder='frontend/templates',
+            static_folder='frontend/static')
+
+# Secret key for sessions
+app.secret_key = 'crumbear_secret_key_2025'
+
+# Configuration for file uploads
+app.config['UPLOAD_FOLDER'] = 'frontend/static/images/cakes'
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+# Create upload directory if it doesn't exist
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# ========================================
+# Public Routes
+# ========================================
+
+@app.route('/')
+def index():
+    """Home page - Browse cakes"""
+    try:
+        cakes = execute_query("""
+            SELECT c.*, 
+                   (SELECT TOP 1 image_url FROM CakeImages 
+                    WHERE cake_id = c.cake_id AND is_primary = 1) as image_url
+            FROM Cakes c
+            ORDER BY is_featured DESC, created_at DESC
+        """)
+        return render_template('index.html', cakes=cakes)
+    except Exception as e:
+        print(f"Error loading cakes: {e}")
+        return render_template('index.html', cakes=[])
+
+@app.route('/calculator')
+def calculator():
+    """Price calculator page"""
+    return render_template('calculator.html')
+
+# ========================================
+# API Routes for Calculator
+# ========================================
+
+@app.route('/api/cakes')
+def api_cakes():
+    """Get all cakes with their images"""
+    try:
+        cakes = execute_query("""
+            SELECT c.*, 
+                   (SELECT TOP 1 image_url FROM CakeImages 
+                    WHERE cake_id = c.cake_id AND is_primary = 1) as image_url
+            FROM Cakes c
+            ORDER BY name
+        """)
+        return jsonify(cakes)
+    except Exception as e:
+        print(f"API Error: {e}")
+        return jsonify([])
+
+@app.route('/api/toppings')
+def api_toppings():
+    """Get all available toppings"""
+    try:
+        toppings = execute_query("""
+            SELECT topping_id, name, price, is_available
+            FROM Toppings
+            WHERE is_available = 1
+            ORDER BY name
+        """)
+        return jsonify(toppings)
+    except Exception as e:
+        print(f"API Error: {e}")
+        return jsonify([])
+
+@app.route('/api/flavors')
+def api_flavors():
+    """Get all available flavors"""
+    try:
+        flavors = execute_query("""
+            SELECT flavor_id, name, price_per_layer, is_available
+            FROM Flavors
+            WHERE is_available = 1
+            ORDER BY name
+        """)
+        return jsonify(flavors)
+    except Exception as e:
+        print(f"API Error: {e}")
+        return jsonify([])
+
+@app.route('/api/cakes/<int:cake_id>')
+def api_cake_detail(cake_id):
+    """Get detailed cake information including all images"""
+    try:
+        # Get cake info
+        cake = execute_query("""
+            SELECT cake_id, name, description, category,
+                   base_price_4x3, base_price_5x3, base_price_6x3,
+                   is_featured, view_count
+            FROM Cakes
+            WHERE cake_id = ?
+        """, (cake_id,))
+        
+        if not cake:
+            return jsonify({'error': 'Cake not found'}), 404
+            
+        cake_data = cake[0]
+        
+        # Get all images for this cake
+        images = execute_query("""
+            SELECT image_id, image_url, is_primary, display_order
+            FROM CakeImages
+            WHERE cake_id = ?
+            ORDER BY is_primary DESC, display_order
+        """, (cake_id,))
+        
+        cake_data['images'] = images
+        return jsonify(cake_data)
+        
+    except Exception as e:
+        print(f"API Error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/cakes/<int:cake_id>/view', methods=['POST'])
+def api_cake_increment_view(cake_id):
+    """Increment view count for a cake"""
+    try:
+        execute_query("""
+            UPDATE Cakes
+            SET view_count = view_count + 1
+            WHERE cake_id = ?
+        """, (cake_id,), fetch=False)
+        
+        # Return updated view count
+        result = execute_query("""
+            SELECT view_count FROM Cakes WHERE cake_id = ?
+        """, (cake_id,))
+        
+        if result:
+            return jsonify({'success': True, 'view_count': result[0]['view_count']})
+        else:
+            return jsonify({'success': False, 'error': 'Cake not found'}), 404
+            
+    except Exception as e:
+        print(f"API Error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/colors')
+def api_colors():
+    """Get all available icing colors"""
+    try:
+        colors = execute_query("""
+            SELECT color_id, color_name, hex_code, shade, price_multiplier, is_available
+            FROM IcingColors
+            WHERE is_available = 1
+            ORDER BY color_name
+        """)
+        return jsonify(colors)
+    except Exception as e:
+        print(f"API Error: {e}")
+        return jsonify([])
+
+@app.route('/api/shade-pricing')
+def api_shade_pricing():
+    """Get current shade pricing for calculator"""
+    try:
+        pricing = execute_query("""
+            SELECT shade, ISNULL(price_multiplier, 1.0) as price
+            FROM IcingColors
+            WHERE shade IN ('Light', 'Medium', 'Dark')
+            GROUP BY shade, price_multiplier
+        """)
+        
+        # Convert to simple dict format
+        result = {'Light': 0, 'Medium': 30, 'Dark': 50}  # defaults
+        for item in pricing:
+            if item['shade'] in result:
+                result[item['shade']] = float(item['price'])
+        
+        return jsonify(result)
+    except Exception as e:
+        print(f"API Error: {e}")
+        # Return defaults on error
+        return jsonify({'Light': 0, 'Medium': 30, 'Dark': 50})
+
+# ========================================
+# Public Routes
+# ========================================
+
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    """Admin login page"""
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        # Simple hardcoded auth for now
+        if username == 'admin' and password == 'crumbear123':
+            session['admin_logged_in'] = True
+            return redirect(url_for('admin_dashboard'))
+        else:
+            return render_template('admin_login.html', error='Invalid credentials')
+    
+    return render_template('admin_login.html')
+
+@app.route('/admin/dashboard')
+def admin_dashboard():
+    """Admin dashboard with analytics"""
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    
+    try:
+        # Get analytics data
+        total_cakes = execute_query("SELECT COUNT(*) as count FROM Cakes")[0]['count']
+        total_views = execute_query("SELECT ISNULL(SUM(view_count), 0) as total FROM Cakes")[0]['total']
+        total_toppings = execute_query("SELECT COUNT(*) as count FROM Toppings WHERE is_available = 1")[0]['count']
+        featured_cakes = execute_query("SELECT COUNT(*) as count FROM Cakes WHERE is_featured = 1")[0]['count']
+        
+        # Most viewed cakes (for chart)
+        most_viewed = execute_query("""
+            SELECT TOP 5 name, view_count
+            FROM Cakes
+            ORDER BY view_count DESC
+        """)
+        
+        # Top 10 cakes (for table)
+        top_cakes = execute_query("""
+            SELECT TOP 10 *
+            FROM Cakes
+            ORDER BY view_count DESC
+        """)
+        
+        # Category distribution
+        category_dist = execute_query("""
+            SELECT category, COUNT(*) as count
+            FROM Cakes
+            GROUP BY category
+        """)
+        
+        # Prepare chart data
+        chart_data = {
+            'cake_names': [cake['name'] for cake in most_viewed],
+            'cake_views': [cake['view_count'] for cake in most_viewed],
+            'categories': [cat['category'] for cat in category_dist],
+            'category_counts': [cat['count'] for cat in category_dist]
+        }
+        
+        stats = {
+            'total_cakes': total_cakes,
+            'total_views': total_views,
+            'total_toppings': total_toppings,
+            'featured_cakes': featured_cakes
+        }
+        
+        return render_template('admin_dashboard.html',
+                             stats=stats,
+                             chart_data=chart_data,
+                             top_cakes=top_cakes)
+    except Exception as e:
+        print(f"Dashboard error: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        stats = {
+            'total_cakes': 0,
+            'total_views': 0,
+            'total_toppings': 0,
+            'featured_cakes': 0
+        }
+        chart_data = {
+            'cake_names': [],
+            'cake_views': [],
+            'categories': [],
+            'category_counts': []
+        }
+        return render_template('admin_dashboard.html',
+                             stats=stats,
+                             chart_data=chart_data,
+                             top_cakes=[])
+
+# ========================================
+# Admin - Cakes Management
+# ========================================
+
+@app.route('/admin/cakes')
+def admin_cakes():
+    """Admin cakes management page"""
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    
+    try:
+        cakes = execute_query("""
+            SELECT c.*, 
+                   (SELECT TOP 1 image_url FROM CakeImages 
+                    WHERE cake_id = c.cake_id AND is_primary = 1) as image_url
+            FROM Cakes c
+            ORDER BY created_at DESC
+        """)
+        return render_template('admin_cakes.html', cakes=cakes)
+    except Exception as e:
+        print(f"Error loading cakes: {e}")
+        return render_template('admin_cakes.html', cakes=[])
+
+@app.route('/admin/cakes/add', methods=['POST'])
+def admin_cakes_add():
+    """Add a new cake"""
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    
+    try:
+        name = request.form.get('name')
+        description = request.form.get('description')
+        category = request.form.get('category')
+        price_4x3 = float(request.form.get('base_price_4x3', 0))
+        price_5x3 = float(request.form.get('base_price_5x3', 0))
+        price_6x3 = float(request.form.get('base_price_6x3', 0))
+        is_featured = 1 if request.form.get('is_featured') else 0
+        
+        # Insert cake
+        cake_id = execute_insert("""
+            INSERT INTO Cakes (name, description, category, base_price_4x3, base_price_5x3, base_price_6x3, is_featured)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (name, description, category, price_4x3, price_5x3, price_6x3, is_featured))
+        
+        # Handle file upload (form field is named 'images')
+        if 'images' in request.files:
+            files = request.files.getlist('images')
+            
+            for idx, file in enumerate(files):
+                if file and file.filename and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    # Create unique filename
+                    filename = f"cake_{cake_id}_{filename}"
+                    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    file.save(filepath)
+                    
+                    # Save to database (first image is primary)
+                    image_url = f"/static/images/cakes/{filename}"
+                    is_primary = 1 if idx == 0 else 0
+                    execute_query("""
+                        INSERT INTO CakeImages (cake_id, image_url, is_primary, display_order)
+                        VALUES (?, ?, ?, ?)
+                    """, (cake_id, image_url, is_primary, idx), fetch=False)
+        
+        print(f"✅ Added new cake: {name}")
+        return redirect(url_for('admin_cakes'))
+    
+    except Exception as e:
+        print(f"Error adding cake: {e}")
+        return redirect(url_for('admin_cakes'))
+
+@app.route('/admin/cakes/edit/<int:cake_id>', methods=['POST'])
+def admin_cakes_edit(cake_id):
+    """Edit an existing cake"""
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    
+    try:
+        name = request.form.get('name')
+        description = request.form.get('description')
+        category = request.form.get('category')
+        price_4x3 = float(request.form.get('base_price_4x3', 0))
+        price_5x3 = float(request.form.get('base_price_5x3', 0))
+        price_6x3 = float(request.form.get('base_price_6x3', 0))
+        is_featured = 1 if request.form.get('is_featured') else 0
+        
+        # Update cake details
+        execute_query("""
+            UPDATE Cakes
+            SET name = ?, description = ?, category = ?,
+                base_price_4x3 = ?, base_price_5x3 = ?, base_price_6x3 = ?,
+                is_featured = ?, updated_at = GETDATE()
+            WHERE cake_id = ?
+        """, (name, description, category, price_4x3, price_5x3, price_6x3, is_featured, cake_id), fetch=False)
+        
+        # Handle new image uploads (if any)
+        if 'images' in request.files:
+            files = request.files.getlist('images')
+            
+            # Get current max display order
+            max_order = execute_query("""
+                SELECT ISNULL(MAX(display_order), -1) as max_order
+                FROM CakeImages WHERE cake_id = ?
+            """, (cake_id,))
+            next_order = max_order[0]['max_order'] + 1 if max_order else 0
+            
+            for idx, file in enumerate(files):
+                if file and file.filename and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    filename = f"cake_{cake_id}_{filename}"
+                    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    file.save(filepath)
+                    
+                    image_url = f"/static/images/cakes/{filename}"
+                    # New images are not primary by default
+                    execute_query("""
+                        INSERT INTO CakeImages (cake_id, image_url, is_primary, display_order)
+                        VALUES (?, ?, 0, ?)
+                    """, (cake_id, image_url, next_order + idx), fetch=False)
+        
+        print(f"✅ Updated cake: {name}")
+        return redirect(url_for('admin_cakes'))
+    
+    except Exception as e:
+        print(f"Error editing cake: {e}")
+        return redirect(url_for('admin_cakes'))
+
+@app.route('/admin/cakes/delete/<int:cake_id>', methods=['POST'])
+def admin_cakes_delete(cake_id):
+    """Delete a cake"""
+    if not session.get('admin_logged_in'):
+        return jsonify({'success': False}), 403
+    
+    try:
+        # Get cake name for logging
+        cake = execute_query("SELECT name FROM Cakes WHERE cake_id = ?", (cake_id,))
+        cake_name = cake[0]['name'] if cake else f"ID {cake_id}"
+        
+        # Delete cake (CASCADE will handle CakeImages)
+        execute_query("DELETE FROM Cakes WHERE cake_id = ?", (cake_id,), fetch=False)
+        
+        print(f"✅ Deleted cake ID {cake_id}: {cake_name}")
+        return jsonify({'success': True})
+    
+    except Exception as e:
+        print(f"Error deleting cake: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ========================================
+# Admin - Toppings Management
+# ========================================
+
+@app.route('/admin/toppings')
+def admin_toppings():
+    """Admin toppings management page"""
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    
+    try:
+        toppings = execute_query("SELECT * FROM Toppings ORDER BY name")
+        return render_template('admin_toppings.html', toppings=toppings)
+    except Exception as e:
+        print(f"Error loading toppings: {e}")
+        return render_template('admin_toppings.html', toppings=[])
+
+@app.route('/admin/toppings/add', methods=['POST'])
+def admin_toppings_add():
+    """Add a new topping"""
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    
+    try:
+        name = request.form.get('name')
+        price = float(request.form.get('price', 0))
+        
+        execute_insert("""
+            INSERT INTO Toppings (name, price, is_available)
+            VALUES (?, ?, 1)
+        """, (name, price))
+        
+        print(f"✅ Added topping: {name}")
+        return redirect(url_for('admin_toppings'))
+    
+    except Exception as e:
+        print(f"Error adding topping: {e}")
+        return redirect(url_for('admin_toppings'))
+
+@app.route('/admin/toppings/edit/<int:topping_id>', methods=['POST'])
+def admin_toppings_edit(topping_id):
+    """Edit a topping"""
+    if not session.get('admin_logged_in'):
+        return jsonify({'success': False}), 403
+    
+    try:
+        name = request.form.get('name')
+        price = float(request.form.get('price', 0))
+        
+        execute_query("""
+            UPDATE Toppings
+            SET name = ?, price = ?
+            WHERE topping_id = ?
+        """, (name, price, topping_id), fetch=False)
+        
+        print(f"✅ Updated topping ID {topping_id}")
+        return jsonify({'success': True})
+    
+    except Exception as e:
+        print(f"Error updating topping: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/admin/toppings/delete/<int:topping_id>', methods=['POST'])
+def admin_toppings_delete(topping_id):
+    """Delete a topping"""
+    if not session.get('admin_logged_in'):
+        return jsonify({'success': False}), 403
+    
+    try:
+        execute_query("DELETE FROM Toppings WHERE topping_id = ?", (topping_id,), fetch=False)
+        print(f"✅ Deleted topping ID {topping_id}")
+        return jsonify({'success': True})
+    
+    except Exception as e:
+        print(f"Error deleting topping: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ========================================
+# Admin - Flavors Management
+# ========================================
+
+@app.route('/admin/flavors')
+def admin_flavors():
+    """Admin flavors management page"""
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    
+    try:
+        flavors = execute_query("SELECT * FROM Flavors ORDER BY name")
+        return render_template('admin_flavors.html', flavors=flavors)
+    except Exception as e:
+        print(f"Error loading flavors: {e}")
+        return render_template('admin_flavors.html', flavors=[])
+
+@app.route('/admin/flavors/add', methods=['POST'])
+def admin_flavors_add():
+    """Add a new flavor"""
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    
+    try:
+        name = request.form.get('name')
+        price_per_layer = float(request.form.get('price_per_layer', 0))
+        
+        execute_insert("""
+            INSERT INTO Flavors (name, price_per_layer, is_available)
+            VALUES (?, ?, 1)
+        """, (name, price_per_layer))
+        
+        print(f"✅ Added flavor: {name}")
+        return redirect(url_for('admin_flavors'))
+    
+    except Exception as e:
+        print(f"Error adding flavor: {e}")
+        return redirect(url_for('admin_flavors'))
+
+@app.route('/admin/flavors/edit/<int:flavor_id>', methods=['POST'])
+def admin_flavors_edit(flavor_id):
+    """Edit a flavor"""
+    if not session.get('admin_logged_in'):
+        return jsonify({'success': False}), 403
+    
+    try:
+        name = request.form.get('name')
+        price_per_layer = float(request.form.get('price_per_layer', 0))
+        
+        execute_query("""
+            UPDATE Flavors
+            SET name = ?, price_per_layer = ?
+            WHERE flavor_id = ?
+        """, (name, price_per_layer, flavor_id), fetch=False)
+        
+        print(f"✅ Updated flavor ID {flavor_id}")
+        return jsonify({'success': True})
+    
+    except Exception as e:
+        print(f"Error updating flavor: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/admin/flavors/delete/<int:flavor_id>', methods=['POST'])
+def admin_flavors_delete(flavor_id):
+    """Delete a flavor"""
+    if not session.get('admin_logged_in'):
+        return jsonify({'success': False}), 403
+    
+    try:
+        execute_query("DELETE FROM Flavors WHERE flavor_id = ?", (flavor_id,), fetch=False)
+        print(f"✅ Deleted flavor ID {flavor_id}")
+        return jsonify({'success': True})
+    
+    except Exception as e:
+        print(f"Error deleting flavor: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ========================================
+# Admin - Colors Management
+# ========================================
+
+@app.route('/admin/colors', methods=['GET', 'POST'])
+def admin_colors():
+    """Admin page for managing icing shade pricing"""
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    
+    if request.method == 'POST':
+        try:
+            light_price = float(request.form.get('light_price', 0))
+            medium_price = float(request.form.get('medium_price', 30))
+            dark_price = float(request.form.get('dark_price', 50))
+            
+            # Update shade pricing in database
+            execute_query("""
+                UPDATE IcingColors SET price_multiplier = ?
+                WHERE shade = 'Light'
+            """, (light_price,), fetch=False)
+            
+            execute_query("""
+                UPDATE IcingColors SET price_multiplier = ?
+                WHERE shade = 'Medium'
+            """, (medium_price,), fetch=False)
+            
+            execute_query("""
+                UPDATE IcingColors SET price_multiplier = ?
+                WHERE shade = 'Dark'
+            """, (dark_price,), fetch=False)
+            
+            print(f"✅ Updated shade pricing: Light={light_price}, Medium={medium_price}, Dark={dark_price}")
+            return redirect(url_for('admin_colors'))
+            
+        except Exception as e:
+            print(f"Error updating shade pricing: {e}")
+    
+    # Get current pricing
+    try:
+        pricing = execute_query("""
+            SELECT shade, ISNULL(price_multiplier, 0) as price
+            FROM IcingColors
+            WHERE shade IN ('Light', 'Medium', 'Dark')
+            GROUP BY shade, price_multiplier
+        """)
+        
+        prices = {'Light': 0, 'Medium': 30, 'Dark': 50}
+        for item in pricing:
+            prices[item['shade']] = float(item['price'])
+        
+        return render_template('admin_colors.html', prices=prices)
+    
+    except Exception as e:
+        print(f"Error loading shade pricing: {e}")
+        return render_template('admin_colors.html', prices={'Light': 0, 'Medium': 30, 'Dark': 50})
+
+@app.route('/admin/colors/add', methods=['POST'])
+def admin_colors_add():
+    """Add a new color"""
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    
+    try:
+        color_name = request.form.get('color_name')
+        hex_code = request.form.get('hex_code')
+        shade = request.form.get('shade')
+        
+        execute_insert("""
+            INSERT INTO IcingColors (color_name, hex_code, shade, is_available)
+            VALUES (?, ?, ?, 1)
+        """, (color_name, hex_code, shade))
+        
+        print(f"✅ Added color: {color_name}")
+        return redirect(url_for('admin_colors'))
+    
+    except Exception as e:
+        print(f"Error adding color: {e}")
+        return redirect(url_for('admin_colors'))
+
+@app.route('/admin/colors/edit/<int:color_id>', methods=['POST'])
+def admin_colors_edit(color_id):
+    """Edit a color"""
+    if not session.get('admin_logged_in'):
+        return jsonify({'success': False}), 403
+    
+    try:
+        color_name = request.form.get('color_name')
+        hex_code = request.form.get('hex_code')
+        shade = request.form.get('shade')
+        
+        execute_query("""
+            UPDATE IcingColors
+            SET color_name = ?, hex_code = ?, shade = ?
+            WHERE color_id = ?
+        """, (color_name, hex_code, shade, color_id), fetch=False)
+        
+        print(f"✅ Updated color ID {color_id}")
+        return jsonify({'success': True})
+    
+    except Exception as e:
+        print(f"Error updating color: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/admin/colors/delete/<int:color_id>', methods=['POST'])
+def admin_colors_delete(color_id):
+    """Delete a color"""
+    if not session.get('admin_logged_in'):
+        return jsonify({'success': False}), 403
+    
+    try:
+        execute_query("DELETE FROM IcingColors WHERE color_id = ?", (color_id,), fetch=False)
+        print(f"✅ Deleted color ID {color_id}")
+        return jsonify({'success': True})
+    
+    except Exception as e:
+        print(f"Error deleting color: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ========================================
+# Run Application
+# ========================================
+
+if __name__ == '__main__':
+    print("🐻 Starting Crumbear Cake Management System with Database...")
+    print("📊 Database: SQL Server (CrumbearDB)")
+    print("🌐 Server: http://localhost:5001")
+    app.run(host='0.0.0.0', port=5001, debug=True)

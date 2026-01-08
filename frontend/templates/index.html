@@ -1,32 +1,74 @@
 {% extends "base.html" %}
 
-{% block title %}Browse Cakes - Crumbear{% endblock %}
+{% block title %}Browse Cake Designs - Crumbear{% endblock %}
 
 {% block content %}
 <div class="container">
-    <h1 class="page-title">Bento Cake Pricelist</h1>
+    <!-- User Greeting Bar (above search) -->
+    {% if logged_in_customer %}
+    <div class="d-flex justify-content-between align-items-center mb-3 px-2">
+        <span style="color: #AC4037; font-weight: 500; font-size: 1.1rem;">
+            👋 Hi, {{ logged_in_customer.full_name }}!
+        </span>
+        <button onclick="confirmUserLogout()" class="btn btn-sm" style="background-color: #AC4037; color: white; border-radius: 20px; padding: 6px 20px;">
+            Sign Out
+        </button>
+    </div>
+    {% endif %}
     
-    <!-- Category & Size Filters -->
-    <div class="filter-section">
-        <!-- Category Filter -->
-        <div class="filter-group">
-            <span class="filter-label">Category:</span>
-            <div class="category-filter">
-                <button class="category-btn active" data-category="all">All</button>
-                <button class="category-btn" data-category="Birthday">Birthday</button>
-                <button class="category-btn" data-category="Wedding">Wedding</button>
-                <button class="category-btn" data-category="Anniversaries">Anniversaries</button>
-                <button class="category-btn" data-category="Cartoons">Cartoons</button>
-            </div>
+    <!-- Search Bar -->
+    <div class="search-section mb-4">
+        <div class="input-group" style="border-radius: 25px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <span class="input-group-text" style="background-color: var(--soft-pink); border: none; padding-left: 20px;">
+                🔍
+            </span>
+            <input type="text" class="form-control" id="searchInput" 
+                   placeholder="Search by theme, cake name, or flavor..." 
+                   style="border: none; padding: 15px;">
+            <button class="btn" type="button" id="clearSearch" 
+                    style="background-color: var(--primary-pink); color: white; border: none; padding: 0 25px;">
+                Clear
+            </button>
         </div>
-        
-        <!-- Size Filter -->
-        <div class="filter-group">
-            <span class="filter-label">Size:</span>
-            <div class="size-filter">
-                <button class="size-btn" data-size="4x3">4x3</button>
-                <button class="size-btn active" data-size="5x3">5x3</button>
-                <button class="size-btn" data-size="6x3">6x3</button>
+    </div>
+    
+    <!-- Theme Filters and Sorting -->
+    <div class="filter-section mb-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center">
+            <!-- Category Filters (left) -->
+            <div class="category-filter d-flex flex-wrap gap-2">
+                <button class="category-btn active" data-theme="all">All</button>
+                <button class="category-btn" data-theme="Birthday">Birthday</button>
+                <button class="category-btn" data-theme="Wedding">Wedding</button>
+                <button class="category-btn" data-theme="Anniversary">Anniversary</button>
+                <button class="category-btn" data-theme="Graduation">Graduation</button>
+                <button class="category-btn" data-theme="Holiday">Holiday</button>
+            </div>
+            
+            <!-- Sorting Filters (right) -->
+            <div class="sorting-filters d-flex gap-2 align-items-center mt-2 mt-md-0" style="margin-left: 10px;">
+                <!-- Price Sort Toggle Button -->
+                <button class="btn sort-btn" id="priceSortBtn" data-sort="none" 
+                        style="background-color: #EDCAD4; color: #AC4037; border: 2px solid #AC4037; border-radius: 20px; padding: 8px 16px; font-weight: 500;">
+                    💰 Price
+                </button>
+                
+                <!-- Star Rating Filter Dropdown -->
+                <div class="dropdown">
+                    <button class="btn dropdown-toggle" type="button" id="ratingFilterBtn" data-bs-toggle="dropdown" aria-expanded="false"
+                            style="background-color: #EDCAD4; color: #AC4037; border: 2px solid #AC4037; border-radius: 20px; padding: 8px 16px; font-weight: 500;">
+                        ⭐ Rating
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="ratingFilterBtn" style="border-radius: 15px; border: 2px solid #EDCAD4;">
+                        <li><a class="dropdown-item rating-filter active" href="#" data-rating="all">All Ratings</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item rating-filter" href="#" data-rating="5">⭐⭐⭐⭐⭐ 5 Stars</a></li>
+                        <li><a class="dropdown-item rating-filter" href="#" data-rating="4">⭐⭐⭐⭐ 4+ Stars</a></li>
+                        <li><a class="dropdown-item rating-filter" href="#" data-rating="3">⭐⭐⭐ 3+ Stars</a></li>
+                        <li><a class="dropdown-item rating-filter" href="#" data-rating="2">⭐⭐ 2+ Stars</a></li>
+                        <li><a class="dropdown-item rating-filter" href="#" data-rating="1">⭐ 1+ Stars</a></li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
@@ -35,8 +77,8 @@
     <div class="content-section text-center mb-5">
         <div class="row align-items-center">
             <div class="col-md-8">
-                <h3>💭 Have a cake in mind?</h3>
-                <p class="mb-0">Calculate your custom cake price with our interactive price calculator! Choose size, layers, flavors, toppings, and more. 🍰✨</p>
+                <h3>💭 Want a custom cake?</h3>
+                <p class="mb-0">Calculate your custom cake price with our interactive price calculator! Choose size, complexity, and more. 🍰✨</p>
             </div>
             <div class="col-md-4">
                 <a href="{{ url_for('calculator') }}" class="btn btn-primary btn-lg">
@@ -46,180 +88,231 @@
         </div>
     </div>
 
-    <!-- Cakes Grid -->
-    <div class="row" id="cakesGrid">
-        {% if cakes %}
-            {% for cake in cakes %}
-            <div class="col-md-4 cake-item" data-category="{{ cake.category }}" 
-                 data-price-4x3="{{ cake.base_price_4x3 }}"
-                 data-price-5x3="{{ cake.base_price_5x3 }}"
-                 data-price-6x3="{{ cake.base_price_6x3 }}"
-                 data-cake-id="{{ cake.cake_id }}"
-                 data-cake-name="{{ cake.name }}"
-                 data-cake-description="{{ cake.description }}"
-                 data-view-count="{{ cake.view_count }}">
-                <div class="cake-card" style="cursor: pointer;">
-                    <img src="{{ cake.image_url or url_for('static', filename='images/placeholder-cake.jpg') }}" 
-                         alt="{{ cake.name }}" 
-                         loading="lazy">
-                    <div class="cake-card-body">
-                        <div class="price-display">₱{{ "%.2f"|format(cake.base_price_5x3) }}</div>
+    <!-- Designs Grid -->
+    <div class="row" id="designsGrid">
+        {% if designs %}
+            {% for design in designs %}
+            <div class="col-lg-3 col-md-4 col-sm-6 design-item mb-4" 
+                 data-theme="{{ design.theme }}"
+                 data-cake-name="{{ design.cake_name }}"
+                 data-flavor="{{ design.flavor }}"
+                 data-design-id="{{ design.design_id }}"
+                 data-price="{{ design.calculated_price }}"
+                 data-rating="{{ design.avg_rating }}">
+                <a href="{{ url_for('design_detail', design_id=design.design_id) }}" class="text-decoration-none">
+                    <div class="cake-card" style="cursor: pointer; transition: transform 0.3s, box-shadow 0.3s;">
+                        <div class="position-relative" style="border-radius: 20px; overflow: hidden; border: 2px solid #EDCAD4;">
+                            <img src="{{ design.image_url or url_for('static', filename='images/placeholder-cake.jpg') }}" 
+                                 alt="{{ design.theme }}" 
+                                 loading="lazy"
+                                 style="height: 200px; object-fit: cover; width: 100%;">
+                            <!-- Rating Badge -->
+                            {% if design.review_count > 0 %}
+                            <span class="position-absolute top-0 end-0 m-2 badge" 
+                                  style="background-color: rgba(172, 64, 55, 0.9); border-radius: 10px;">
+                                ⭐ {{ "%.1f"|format(design.avg_rating) }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        <!-- Price -->
+                        <div style="margin-top: 5px;">
+                            <div class="price-display" style="font-size: 1.3rem; color: #AC4037; font-weight: bold;">
+                                ₱{{ "%.2f"|format(design.calculated_price) }}
+                            </div>
+                        </div>
                     </div>
-                </div>
+                </a>
             </div>
             {% endfor %}
         {% else %}
             <div class="col-12">
                 <div class="content-section text-center">
                     <h3>🚧 Under Crumbstruction!</h3>
-                    <p>No cakes available yet. Check back soon! 🧸🪄✨</p>
+                    <p>No designs available yet. Check back soon! 🧸🪄✨</p>
                 </div>
             </div>
         {% endif %}
     </div>
     
-    <!-- Cake Detail Modal -->
-    <div class="modal fade" id="cakeDetailModal" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content" style="border-radius: 20px; border: 3px solid var(--soft-pink);">
-                <div class="modal-header" style="border-bottom: 2px solid #EDCAD4;">
-                    <h5 class="modal-title" id="cakeModalTitle" style="font-family: 'Fredoka', sans-serif; color: #AC4037;"></h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body" style="padding: 15px;">
-                    <div class="row">
-                        <!-- Left side: Image slideshow -->
-                        <div class="col-md-6" style="padding: 15px;">
-                            <div id="cakeCarousel" class="carousel slide" data-bs-ride="carousel">
-                                <div class="carousel-inner" id="cakeCarouselInner">
-                                    <div class="carousel-item active">
-                                        <img id="cakeModalImage" src="" alt="" class="d-block w-100" style="border-radius: 15px; height: 350px; object-fit: cover;">
-                                    </div>
-                                </div>
-                                <button class="carousel-control-prev" type="button" data-bs-target="#cakeCarousel" data-bs-slide="prev" style="width: 10%;">
-                                    <span class="carousel-control-prev-icon" aria-hidden="true" style="background-color: rgba(172, 64, 55, 0.8); border-radius: 50%; padding: 10px;"></span>
-                                    <span class="visually-hidden">Previous</span>
-                                </button>
-                                <button class="carousel-control-next" type="button" data-bs-target="#cakeCarousel" data-bs-slide="next" style="width: 10%;">
-                                    <span class="carousel-control-next-icon" aria-hidden="true" style="background-color: rgba(172, 64, 55, 0.8); border-radius: 50%; padding: 10px;"></span>
-                                    <span class="visually-hidden">Next</span>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- Right side: Cake information -->
-                        <div class="col-md-6" style="padding: 15px;">
-                            <p id="cakeModalDescription" class="text-muted mb-4"></p>
-                            
-                            <div class="mb-4">
-                                <h6 style="font-family: 'Fredoka', sans-serif; color: #AC4037; margin-bottom: 15px;">Prices:</h6>
-                                <div class="d-flex justify-content-between mb-3 p-2" style="background-color: #EDCAD4; border-radius: 8px;">
-                                    <span style="font-weight: 500;">4x3 inches:</span>
-                                    <strong id="cakePrice4x3" style="color: #AC4037;"></strong>
-                                </div>
-                                <div class="d-flex justify-content-between mb-3 p-2" style="background-color: #EDCAD4; border-radius: 8px;">
-                                    <span style="font-weight: 500;">5x3 inches:</span>
-                                    <strong id="cakePrice5x3" style="color: #AC4037;"></strong>
-                                </div>
-                                <div class="d-flex justify-content-between mb-3 p-2" style="background-color: #EDCAD4; border-radius: 8px;">
-                                    <span style="font-weight: 500;">6x3 inches:</span>
-                                    <strong id="cakePrice6x3" style="color: #AC4037;"></strong>
-                                </div>
-                            </div>
-                            
-                            <div class="text-center mt-4">
-                                <small class="text-muted" style="font-size: 0.9rem;">👁️ <span id="cakeViewCount"></span> views</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <!-- Pagination Controls -->
+    {% if total_pages > 1 %}
+    <nav aria-label="Cake designs pagination" class="mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <span style="color: #AC4037;">
+                Showing {{ (page - 1) * 30 + 1 }}-{{ [page * 30, total_designs]|min }} of {{ total_designs }} designs
+            </span>
         </div>
-    </div>
+        <ul class="pagination justify-content-center" style="gap: 5px;">
+            <!-- First Page -->
+            {% if page > 1 %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('index', page=1) }}" style="border-radius: 10px; border: 2px solid #EDCAD4; color: #AC4037;">
+                    « First
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('index', page=page-1) }}" style="border-radius: 10px; border: 2px solid #EDCAD4; color: #AC4037;">
+                    ‹ Prev
+                </a>
+            </li>
+            {% endif %}
+            
+            <!-- Page Numbers -->
+            {% set start_page = [1, page - 2]|max %}
+            {% set end_page = [total_pages, page + 2]|min %}
+            
+            {% for p in range(start_page, end_page + 1) %}
+            <li class="page-item {% if p == page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('index', page=p) }}" 
+                   style="border-radius: 10px; {% if p == page %}background-color: #AC4037; border-color: #AC4037; color: white;{% else %}border: 2px solid #EDCAD4; color: #AC4037;{% endif %}">
+                    {{ p }}
+                </a>
+            </li>
+            {% endfor %}
+            
+            <!-- Next/Last Page -->
+            {% if page < total_pages %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('index', page=page+1) }}" style="border-radius: 10px; border: 2px solid #EDCAD4; color: #AC4037;">
+                    Next ›
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('index', page=total_pages) }}" style="border-radius: 10px; border: 2px solid #EDCAD4; color: #AC4037;">
+                    Last »
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
 </div>
+
+<style>
+.cake-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(172, 64, 55, 0.2);
+}
+.sort-btn:hover, .sort-btn.active {
+    background-color: #AC4037 !important;
+    color: white !important;
+}
+.dropdown-item.rating-filter:hover, .dropdown-item.rating-filter.active {
+    background-color: #EDCAD4;
+    color: #AC4037;
+}
+.dropdown-item.rating-filter.active {
+    font-weight: 600;
+}
+</style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-let currentSize = '5x3';
+// State variables
+let currentPriceSort = 'none'; // 'none', 'low', 'high'
+let currentRatingFilter = 'all';
 
-// Category filter functionality
+// Theme filter functionality
 document.querySelectorAll('.category-btn').forEach(btn => {
     btn.addEventListener('click', function() {
         document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
-        
-        const category = this.getAttribute('data-category');
-        filterCakes(category, currentSize);
+        filterAndSortDesigns();
     });
 });
 
-// Size filter functionality
-document.querySelectorAll('.size-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+// Price sort toggle button
+const priceSortBtn = document.getElementById('priceSortBtn');
+priceSortBtn.addEventListener('click', function() {
+    if (currentPriceSort === 'none' || currentPriceSort === 'high') {
+        currentPriceSort = 'low';
+        this.innerHTML = '💰 Price ↑';
         this.classList.add('active');
+    } else {
+        currentPriceSort = 'high';
+        this.innerHTML = '💰 Price ↓';
+        this.classList.add('active');
+    }
+    filterAndSortDesigns();
+});
+
+// Rating filter dropdown
+document.querySelectorAll('.rating-filter').forEach(item => {
+    item.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.querySelectorAll('.rating-filter').forEach(i => i.classList.remove('active'));
+        this.classList.add('active');
+        currentRatingFilter = this.dataset.rating;
         
-        currentSize = this.getAttribute('data-size');
-        updatePricesBySize(currentSize);
+        // Update button text
+        const btn = document.getElementById('ratingFilterBtn');
+        if (currentRatingFilter === 'all') {
+            btn.innerHTML = '⭐ Rating';
+        } else {
+            btn.innerHTML = '⭐ ' + currentRatingFilter + '+ Stars';
+        }
+        
+        filterAndSortDesigns();
     });
 });
 
-function filterCakes(category, size) {
-    const cakeItems = document.querySelectorAll('.cake-item');
+function filterAndSortDesigns() {
+    const selectedTheme = document.querySelector('.category-btn.active').dataset.theme;
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
     
-    cakeItems.forEach(item => {
-        if (category === 'all' || item.getAttribute('data-category') === category) {
+    const designItems = Array.from(document.querySelectorAll('.design-item'));
+    const grid = document.getElementById('designsGrid');
+    
+    // Filter items
+    designItems.forEach(item => {
+        const theme = item.dataset.theme;
+        const cakeName = item.dataset.cakeName.toLowerCase();
+        const flavor = item.dataset.flavor.toLowerCase();
+        const rating = parseFloat(item.dataset.rating) || 0;
+        
+        const matchesTheme = selectedTheme === 'all' || theme.includes(selectedTheme);
+        const matchesSearch = searchTerm === '' || 
+                             theme.toLowerCase().includes(searchTerm) || 
+                             cakeName.includes(searchTerm) || 
+                             flavor.includes(searchTerm);
+        const matchesRating = currentRatingFilter === 'all' || rating >= parseFloat(currentRatingFilter);
+        
+        if (matchesTheme && matchesSearch && matchesRating) {
             item.style.display = 'block';
-            setTimeout(() => item.style.opacity = '1', 10);
+            item.style.opacity = '1';
+            item.dataset.visible = 'true';
         } else {
+            item.style.display = 'none';
             item.style.opacity = '0';
-            setTimeout(() => item.style.display = 'none', 300);
+            item.dataset.visible = 'false';
         }
     });
-}
-
-function updatePricesBySize(size) {
-    const cakeItems = document.querySelectorAll('.cake-item');
     
-    cakeItems.forEach(item => {
-        const price = item.getAttribute(`data-price-${size}`);
-        const priceDisplay = item.querySelector('.price-display');
-        if (priceDisplay && price) {
-            priceDisplay.textContent = '₱' + parseFloat(price).toFixed(2);
-        }
-    });
+    // Sort visible items by price if sorting is active
+    if (currentPriceSort !== 'none') {
+        const visibleItems = designItems.filter(item => item.dataset.visible === 'true');
+        
+        visibleItems.sort((a, b) => {
+            const priceA = parseFloat(a.dataset.price);
+            const priceB = parseFloat(b.dataset.price);
+            return currentPriceSort === 'low' ? priceA - priceB : priceB - priceA;
+        });
+        
+        // Reorder in DOM
+        visibleItems.forEach(item => grid.appendChild(item));
+    }
 }
 
-// View cake details
-document.querySelectorAll('.cake-card').forEach(card => {
-    card.addEventListener('click', function() {
-        const item = this.closest('.cake-item');
-        const cakeId = item.getAttribute('data-cake-id');
-        const name = item.getAttribute('data-cake-name');
-        const description = item.getAttribute('data-cake-description');
-        const price4x3 = item.getAttribute('data-price-4x3');
-        const price5x3 = item.getAttribute('data-price-5x3');
-        const price6x3 = item.getAttribute('data-price-6x3');
-        const viewCount = item.getAttribute('data-view-count');
-        const imageUrl = item.querySelector('img').src;
-        
-        // Update modal content
-        document.getElementById('cakeModalTitle').textContent = name;
-        document.getElementById('cakeModalImage').src = imageUrl;
-        document.getElementById('cakeModalDescription').textContent = description;
-        document.getElementById('cakePrice4x3').textContent = '₱' + parseFloat(price4x3).toFixed(2);
-        document.getElementById('cakePrice5x3').textContent = '₱' + parseFloat(price5x3).toFixed(2);
-        document.getElementById('cakePrice6x3').textContent = '₱' + parseFloat(price6x3).toFixed(2);
-        document.getElementById('cakeViewCount').textContent = viewCount;
-        
-        // Show modal
-        const modal = new bootstrap.Modal(document.getElementById('cakeDetailModal'));
-        modal.show();
-        
-        // Track view (future: send to API)
-        console.log('Viewing cake:', cakeId);
-    });
+// Search functionality
+const searchInput = document.getElementById('searchInput');
+const clearSearchBtn = document.getElementById('clearSearch');
+
+searchInput.addEventListener('input', filterAndSortDesigns);
+
+clearSearchBtn.addEventListener('click', function() {
+    searchInput.value = '';
+    filterAndSortDesigns();
 });
 </script>
 {% endblock %}

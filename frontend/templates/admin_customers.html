@@ -1,0 +1,320 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Manage Customers - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-2"><i class="bi bi-people"></i> Manage Customers</h1>
+            <p class="text-muted">Add, edit, or remove customer information</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <button class="btn btn-lg" style="background-color: #AC4037; color: white;" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
+                <i class="bi bi-plus-circle"></i> Add New Customer
+            </button>
+        </div>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-5">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" id="searchInput" placeholder="Search customers...">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="reviewFilter">
+                        <option value="">All Review Counts</option>
+                        <option value="0">No Reviews</option>
+                        <option value="1">1+ Reviews</option>
+                        <option value="5">5+ Reviews</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="sortOrder">
+                        <option value="id">Sort by ID</option>
+                        <option value="name">Sort by Name</option>
+                        <option value="reviews-desc">Most Reviews</option>
+                        <option value="reviews-asc">Least Reviews</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customers Table -->
+    <div class="card shadow-sm">
+        <div class="card-header" style="background-color: #AC4037;">
+            <h5 class="mb-0 text-white">All Customers (<span id="customerCount">{{ customers|length }}</span>)</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="customersTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Full Name</th>
+                            <th>Email</th>
+                            <th>City</th>
+                            <th>Total Reviews</th>
+                            <th>Avg Rating Given</th>
+                            <th>Joined</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customersTableBody">
+                        {% for customer in customers %}
+                        <tr data-name="{{ customer.full_name|lower }}" data-city="{{ customer.city }}" data-reviews="{{ customer.total_reviews }}">
+                            <td>{{ customer.customer_id }}</td>
+                            <td><strong>{{ customer.full_name }}</strong></td>
+                            <td><a href="mailto:{{ customer.email }}">{{ customer.email }}</a></td>
+                            <td><span class="badge" style="background-color: #BF6865;">{{ customer.city }}</span></td>
+                            <td><span class="badge bg-info">{{ customer.total_reviews }} reviews</span></td>
+                            <td>
+                                {% if customer.avg_rating_given > 0 %}
+                                <span class="text-warning">
+                                    {% for i in range(5) %}
+                                        {% if i < customer.avg_rating_given|int %}
+                                        <i class="bi bi-star-fill"></i>
+                                        {% else %}
+                                        <i class="bi bi-star"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </span>
+                                <small>({{ "%.1f"|format(customer.avg_rating_given) }})</small>
+                                {% else %}
+                                <span class="text-muted">No ratings</span>
+                                {% endif %}
+                            </td>
+                            <td>{% if customer.created_at %}{{ customer.created_at[5:7] }}-{{ customer.created_at[8:10] }}-{{ customer.created_at[:4] }}{% endif %}</td>
+                            <td class="text-nowrap">
+                                <button class="btn btn-sm text-primary p-1" style="border: none; background: none;" onclick="editCustomer({{ customer.customer_id }})" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm text-danger p-1" style="border: none; background: none;" onclick="confirmDelete({{ customer.customer_id }}, '{{ customer.full_name }}')" title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Customer Modal -->
+<div class="modal fade" id="addCustomerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #EDCAD4;">
+                <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Add New Customer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('admin_add_customer') }}" method="POST" onsubmit="return validateForm(this)">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Full Name *</label>
+                        <input type="text" class="form-control" name="full_name" required minlength="2" maxlength="100" placeholder="John Doe">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email *</label>
+                        <input type="email" class="form-control" name="email" required maxlength="100" placeholder="john.doe@email.com">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">City *</label>
+                        <select class="form-select" name="city" required>
+                            <option value="">Select city...</option>
+                            <option value="New York">New York</option>
+                            <option value="Los Angeles">Los Angeles</option>
+                            <option value="Chicago">Chicago</option>
+                            <option value="Houston">Houston</option>
+                            <option value="Phoenix">Phoenix</option>
+                            <option value="Philadelphia">Philadelphia</option>
+                            <option value="San Antonio">San Antonio</option>
+                            <option value="San Diego">San Diego</option>
+                            <option value="Dallas">Dallas</option>
+                            <option value="Miami">Miami</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn" style="background-color: #AC4037; color: white;">Add Customer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Customer Modal -->
+<div class="modal fade" id="editCustomerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #EDCAD4;">
+                <h5 class="modal-title"><i class="bi bi-pencil"></i> Edit Customer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editCustomerForm" method="POST" onsubmit="return validateForm(this)">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Full Name *</label>
+                        <input type="text" class="form-control" name="full_name" id="editFullName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email *</label>
+                        <input type="email" class="form-control" name="email" id="editEmail" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">City *</label>
+                        <select class="form-select" name="city" id="editCity" required>
+                            <option value="New York">New York</option>
+                            <option value="Los Angeles">Los Angeles</option>
+                            <option value="Chicago">Chicago</option>
+                            <option value="Houston">Houston</option>
+                            <option value="Phoenix">Phoenix</option>
+                            <option value="Philadelphia">Philadelphia</option>
+                            <option value="San Antonio">San Antonio</option>
+                            <option value="San Diego">San Diego</option>
+                            <option value="Dallas">Dallas</option>
+                            <option value="Miami">Miami</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn" style="background-color: #AC4037; color: white;">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> Confirm Delete</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete customer <strong id="deleteItemName"></strong>?</p>
+                <p class="text-muted small">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const customersData = {{ customers|tojson|safe }};
+
+function editCustomer(customerId) {
+    const customer = customersData.find(c => c.customer_id === customerId);
+    if (customer) {
+        document.getElementById('editFullName').value = customer.full_name;
+        document.getElementById('editEmail').value = customer.email;
+        document.getElementById('editCity').value = customer.city;
+        document.getElementById('editCustomerForm').action = `/admin/customers/edit/${customerId}`;
+        new bootstrap.Modal(document.getElementById('editCustomerModal')).show();
+    }
+}
+
+let deleteId = null;
+function confirmDelete(id, name) {
+    deleteId = id;
+    document.getElementById('deleteItemName').textContent = name;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', function() {
+            if (deleteId) {
+                fetch(`/admin/customers/delete/${deleteId}`, { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+                    if (data.success) {
+                        showToast('Customer deleted successfully!', 'success');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        showToast(data.message || 'Failed to delete', 'error');
+                    }
+                })
+                .catch(err => {
+                    bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+                    showToast('Error deleting customer: ' + err.message, 'error');
+                });
+            }
+        });
+    }
+});
+
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('success')) showToast(urlParams.get('success'), 'success');
+if (urlParams.get('error')) showToast(urlParams.get('error'), 'error');
+
+// Search and Filter Functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const reviewFilter = document.getElementById('reviewFilter');
+    const sortOrder = document.getElementById('sortOrder');
+    const tableBody = document.getElementById('customersTableBody');
+    const customerCount = document.getElementById('customerCount');
+    
+    function filterAndSort() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const reviewMin = reviewFilter.value ? parseInt(reviewFilter.value) : null;
+        const sort = sortOrder.value;
+        
+        const rows = Array.from(tableBody.querySelectorAll('tr'));
+        let visibleCount = 0;
+        
+        rows.forEach(row => {
+            const name = row.dataset.name || '';
+            const rowReviews = parseInt(row.dataset.reviews) || 0;
+            
+            const matchesSearch = name.includes(searchTerm);
+            const matchesReviews = reviewMin === null || rowReviews >= reviewMin;
+            
+            if (matchesSearch && matchesReviews) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        // Sort visible rows
+        const visibleRows = rows.filter(r => r.style.display !== 'none');
+        visibleRows.sort((a, b) => {
+            if (sort === 'name') return a.dataset.name.localeCompare(b.dataset.name);
+            if (sort === 'reviews-desc') return parseInt(b.dataset.reviews) - parseInt(a.dataset.reviews);
+            if (sort === 'reviews-asc') return parseInt(a.dataset.reviews) - parseInt(b.dataset.reviews);
+            return 0;
+        });
+        visibleRows.forEach(row => tableBody.appendChild(row));
+        
+        customerCount.textContent = visibleCount;
+    }
+    
+    searchInput.addEventListener('input', filterAndSort);
+    reviewFilter.addEventListener('change', filterAndSort);
+    sortOrder.addEventListener('change', filterAndSort);
+});
+</script>
+{% endblock %}
